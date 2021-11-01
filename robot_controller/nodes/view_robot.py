@@ -28,12 +28,15 @@ out = cv2.VideoWriter('/content/drive/My Drive/ENPH 353/robotdriver.mp4', fourcc
 class image_converter:
 
   def __init__(self):
-    self.image_pub = rospy.Publisher("/cmd_vel",Twist)
+    #self.image_pub = rospy.Publisher("/cmd_vel",Twist)
+    self.image_pub = rospy.Publisher("/R1/cmd_vel topic",Twist)
 
 
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
+    #self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
+    self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.callback)
+    self.image_sub = rospy.Subscriber("/clock", time, self.callback)
 
 
   def callback(self,data):
