@@ -1,0 +1,7 @@
+<launch> 
+    <node pkg="enph353_ros_lab"
+         type="view_robot.py"
+         name="view_robot" 
+         output="screen">
+   </node>
+</launch>
