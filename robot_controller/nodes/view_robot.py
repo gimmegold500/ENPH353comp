@@ -55,9 +55,11 @@ class image_converter:
 
     gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
 
-    threshold = 64
-    _, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
-    img = img[700:800]
+    threshold = 140
+    #_, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
+    _, img = cv2.threshold(gray, threshold, 255, 0 )
+    #img = img[700:800]
+    img = img[int(img.shape[0]*0.9):img.shape[0]]
 
     img = cv2.erode(img, None, iterations = 2)
     img = np.invert(img)
@@ -66,18 +68,45 @@ class image_converter:
     cY = 400
 
     M = cv2.moments(img)
+    '''
     try:
       cX = int(M["m10"] / M["m00"])
-      cY = int(M["m01"] / M["m00"]) + 700
+      #cY = int(M["m01"] / M["m00"]) + 700
     except ZeroDivisionError:
       pass
+    '''
 
+    if(M["m00"] != 0):
+            
+      #print("1")
+      cX = int(M["m10"] / M["m00"])
+      #print("2")
+      self.timeout = 0
+      #print("cX:")
+      #print("CX: {:}".format(cX))
+            
+      #print("3")
+      #width = np.shape(gray)[1]
+      #im_width = width // 10
+      #print("width:")
+      #print(width)
+
+      #subsection = int(cX / im_width)
+            
+      #print("subsection: {:}".format(subsection))
+      #print(cX)
+
+      #state[subsection] = 1
+    else:
+      self.timeout += 1
 
     color = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
     '''
     out.write(color)
     '''
-    cX = ((cX - 400)*-1)/45
+
+    VelWeight = 45
+    cX = ((cX - int(img.shape[1]*0.5)*-1)/VelWeight
 
     if(cX == 0):
       cX= 1.0
