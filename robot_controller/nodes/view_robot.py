@@ -116,12 +116,12 @@ class image_converter:
 
     self.image_pub.publish(move)
 
-'''
+    '''
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
     except CvBridgeError as e:
       print(e)
-'''
+    '''
 def main(args):
   ic = image_converter()
   rospy.init_node('image_converter', anonymous=True)
