@@ -2,7 +2,7 @@
 import rospy
 import sys
 import roslib
-roslib.load_manifest('enph353_ros_lab')
+roslib.load_manifest('robot_controller')
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -27,16 +27,20 @@ out = cv2.VideoWriter('/content/drive/My Drive/ENPH 353/robotdriver.mp4', fourcc
 
 class image_converter:
 
+
+
   def __init__(self):
     #self.image_pub = rospy.Publisher("/cmd_vel",Twist)
-    self.image_pub = rospy.Publisher("/R1/cmd_vel topic",Twist)
+    self.image_pub = rospy.Publisher("/R1/cmd_vel",Twist)
 
 
 
     self.bridge = CvBridge()
     #self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
     self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.callback)
-    self.image_sub = rospy.Subscriber("/clock", time, self.callback)
+
+    #We can either create a separate time node or include time somewhere in this node
+    #self.image_sub = rospy.Subscriber("/clock", time, self.callback)
 
 
   def callback(self,data):
@@ -106,10 +110,10 @@ class image_converter:
     '''
 
     VelWeight = 45
-    cX = ((cX - int(img.shape[1]*0.5)*-1)/VelWeight
+    cX = ((cX - int(img.shape[1]*0.5)*-1))/VelWeight
 
-    if(cX == 0):
-      cX= 1.0
+    if cX == 0:
+      cX = 1.0
 
     move.linear.x = 1
     move.angular.z = cX
