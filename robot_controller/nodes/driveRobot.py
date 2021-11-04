@@ -12,6 +12,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
+import time
 
 # rospy.init_node('view_robot', anonymous=True)
 
@@ -30,22 +31,33 @@ class image_converter:
 
 
   def __init__(self):
+    
     #self.image_pub = rospy.Publisher("/cmd_vel",Twist)
     self.image_pub = rospy.Publisher("/R1/cmd_vel",Twist)
 
+    
 
-
+  
     self.bridge = CvBridge()
     #self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
     self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.callback)
 
-    #We can either create a separate time node or include time somewhere in this node
+    #We can either create a separate time node or include time somewhere in this
     #self.image_sub = rospy.Subscriber("/clock", time, self.callback)
+
+    move = Twist()
+    for i in range(50):
+      move.linear.x = 0.2
+      move.angular.z = -1
+
+
 
 
   def callback(self,data):
 
     move = Twist()
+    
+    
     
 
     try:
@@ -63,12 +75,12 @@ class image_converter:
     #_, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
     _, img = cv2.threshold(gray, threshold, 255, 0 )
     #img = img[700:800]
-    img = img[int(img.shape[0]*0.9):img.shape[0]]
+    img = img[int(img.shape[0]*0.5):img.shape[0]]
 
     img = cv2.erode(img, None, iterations = 2)
     img = np.invert(img)
 
-    cX = 400
+    cX = img.shape[1]*0.5
     cY = 400
 
     M = cv2.moments(img)
@@ -109,13 +121,17 @@ class image_converter:
     out.write(color)
     '''
 
-    VelWeight = 45
-    cX = ((cX - int(img.shape[1]*0.5)*-1))/VelWeight
+    VelWeight = 15
+    cX = -1*(cX - img.shape[1]*0.5)/VelWeight
 
+    '''
     if cX == 0:
       cX = 1.0
+    '''
 
-    move.linear.x = 1
+    print(cX)
+
+    move.linear.x = 0.2
     move.angular.z = cX
 
     self.image_pub.publish(move)
@@ -127,6 +143,7 @@ class image_converter:
       print(e)
     '''
 def main(args):
+  
   ic = image_converter()
   rospy.init_node('image_converter', anonymous=True)
   try:
