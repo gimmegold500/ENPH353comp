@@ -76,13 +76,16 @@ class image_converter:
 
     gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
 
-    threshold = 140
+    threshold = 90
     #_, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
     _, img = cv2.threshold(gray, threshold, 255, 0 )
     #img = img[700:800]
-    img = img[int(img.shape[0]*0.3):img.shape[0],int(img.shape[0]*0.1):int(img.shape[0]*0.9)]
+    img = img[int(img.shape[0]*0.6):img.shape[0],int(img.shape[1]*0.3):int(img.shape[1]*0.7)]
+    
 
     img = cv2.erode(img, None, iterations = 2)
+
+    #I dont think we wanna invert anymore? 
     img = np.invert(img)
 
     cX = img.shape[1]*0.5
@@ -101,6 +104,7 @@ class image_converter:
             
       #print("1")
       cX = int(M["m10"] / M["m00"])
+      cY = int(M["m01"] / M["m00"])
       #print("2")
       self.timeout = 0
       #print("cX:")
@@ -125,9 +129,12 @@ class image_converter:
     '''
     out.write(color)
     '''
+    cv2.circle(img, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
+    cv2.imshow("img", img)
+    cv2.waitKey(2)
 
-    VelWeight = 13
-    cX = 1*(cX - img.shape[1]*0.5)/VelWeight
+    VelWeight = 9*15*2*1.2
+    cX = -1*(cX - img.shape[1]*0.5*0.4)/VelWeight
 
     '''
     if cX == 0:
@@ -135,6 +142,8 @@ class image_converter:
     '''
 
     print(cX)
+
+    
 
     move.linear.x = 0.2
     move.angular.z = cX
