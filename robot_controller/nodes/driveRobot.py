@@ -35,7 +35,7 @@ class image_converter:
     #self.image_pub = rospy.Publisher("/cmd_vel",Twist)
     self.image_pub = rospy.Publisher("/R1/cmd_vel",Twist)
 
-    
+    time.sleep(1)
 
   
     self.bridge = CvBridge()
@@ -46,9 +46,14 @@ class image_converter:
     #self.image_sub = rospy.Subscriber("/clock", time, self.callback)
 
     move = Twist()
-    for i in range(50):
-      move.linear.x = 0.2
-      move.angular.z = -1
+    
+    move.linear.x = 0.2
+    move.angular.z = 1
+    self.image_pub.publish(move)
+
+    time.sleep(3)
+
+
 
 
 
@@ -56,8 +61,8 @@ class image_converter:
   def callback(self,data):
 
     move = Twist()
-    
-    
+  
+
     
 
     try:
@@ -75,7 +80,7 @@ class image_converter:
     #_, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
     _, img = cv2.threshold(gray, threshold, 255, 0 )
     #img = img[700:800]
-    img = img[int(img.shape[0]*0.5):img.shape[0]]
+    img = img[int(img.shape[0]*0.3):img.shape[0],int(img.shape[0]*0.1):int(img.shape[0]*0.9)]
 
     img = cv2.erode(img, None, iterations = 2)
     img = np.invert(img)
@@ -121,8 +126,8 @@ class image_converter:
     out.write(color)
     '''
 
-    VelWeight = 15
-    cX = -1*(cX - img.shape[1]*0.5)/VelWeight
+    VelWeight = 13
+    cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
     '''
     if cX == 0:
@@ -143,9 +148,9 @@ class image_converter:
       print(e)
     '''
 def main(args):
-  
-  ic = image_converter()
   rospy.init_node('image_converter', anonymous=True)
+  ic = image_converter()
+  
   try:
     rospy.spin()
   except KeyboardInterrupt:
