@@ -49,6 +49,8 @@ class image_converter:
     
     move.linear.x = 0.2
     move.angular.z = 1
+
+    #THIS IS TO START DRIVING
     self.image_pub.publish(move)
 
     time.sleep(3)
@@ -76,6 +78,10 @@ class image_converter:
 
     gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
 
+
+    #road is lighter than the backdrop, maybe try thresholding between 50-100
+    #then taking the different between them
+  
     threshold = 90
     #_, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
     _, img = cv2.threshold(gray, threshold, 255, 0 )
@@ -85,10 +91,10 @@ class image_converter:
 
     img = cv2.erode(img, None, iterations = 2)
 
-    #I dont think we wanna invert anymore? 
+    #I dont think we wanna invert anymore? JK WE DEF DO
     img = np.invert(img)
 
-    cX = img.shape[1]*0.5
+    cX = int(img.shape[1]*0.5)
     cY = 400
 
     M = cv2.moments(img)
@@ -106,7 +112,7 @@ class image_converter:
       cX = int(M["m10"] / M["m00"])
       cY = int(M["m01"] / M["m00"])
       #print("2")
-      self.timeout = 0
+      #self.timeout = 0
       #print("cX:")
       #print("CX: {:}".format(cX))
             
@@ -122,8 +128,10 @@ class image_converter:
       #print(cX)
 
       #state[subsection] = 1
+      '''
     else:
       self.timeout += 1
+      '''
 
     color = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
     '''
@@ -133,8 +141,8 @@ class image_converter:
     cv2.imshow("img", img)
     cv2.waitKey(2)
 
-    VelWeight = 9*15*2*1.2
-    cX = -1*(cX - img.shape[1]*0.5*0.4)/VelWeight
+    VelWeight = 15 #270
+    cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
     '''
     if cX == 0:
@@ -148,6 +156,8 @@ class image_converter:
     move.linear.x = 0.2
     move.angular.z = cX
 
+
+    #THIS IS REQUIRED FOR DRIVING
     self.image_pub.publish(move)
 
     '''
