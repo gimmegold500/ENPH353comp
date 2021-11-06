@@ -1,0 +1,9 @@
+<launch> 
+
+    <node pkg="resources"
+         type="hsv_threshold.py"
+         name="hsv" 
+         output="screen">
+   </node>
+   
+</launch>
