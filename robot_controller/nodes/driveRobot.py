@@ -12,6 +12,8 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
+import licensePlateDetection as lPD
+import time
 
 # rospy.init_node('view_robot', anonymous=True)
 
@@ -44,7 +46,6 @@ class image_converter:
 
 
   def callback(self,data):
-
     move = Twist()
     
 

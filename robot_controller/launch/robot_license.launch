@@ -1,0 +1,9 @@
+<launch> 
+
+    <node pkg="robot_controller"
+         type="licensePlateDetection.py"
+         name="licensePlateDetection" 
+         output="screen">
+   </node>
+   
+</launch>
