@@ -73,6 +73,9 @@ class image_converter:
 
     move = Twist()
   
+
+    
+
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
@@ -96,8 +99,8 @@ class image_converter:
     #_, img = cv2.threshold(gray, threshold, 255, 0 )
 
     #img = img[700:800]
-    img = img[0:int(img.shape[0]*0.7),int(img.shape[1]*0.1):int(img.shape[1]*0.9)]
-    gray = gray[0:int(img.shape[0]*0.7),int(img.shape[1]*0.1):int(img.shape[1]*0.9)]
+    img = img[int(img.shape[0]*0.0):img.shape[0],int(img.shape[1]*0.1):int(img.shape[1]*0.9)]
+    gray = gray[int(img.shape[0]*0.0):img.shape[0],int(img.shape[1]*0.1):int(img.shape[1]*0.9)]
     
 
     img = cv2.erode(img, None, iterations = 2)
@@ -152,7 +155,7 @@ class image_converter:
     cv2.imshow("img", gray)
     cv2.waitKey(2)
 
-    VelWeight = 15*8 #270
+    VelWeight = 15 #270
     cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
     '''
@@ -169,7 +172,7 @@ class image_converter:
 
 
     #THIS IS REQUIRED FOR DRIVING
-    self.image_pub.publish(move)
+    #self.image_pub.publish(move)
 
     '''
     try:
