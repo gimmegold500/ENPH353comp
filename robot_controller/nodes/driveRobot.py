@@ -37,6 +37,15 @@ class image_converter:
 
     time.sleep(1)
 
+    lh = 0
+    ls = 0
+    lv = 83
+    uh = 255
+    us = 255
+    uv = 86
+    self.lower_hsv_b = np.array([lh,ls,lv])
+    self.upper_hsv_b = np.array([uh,us,uv])
+
   
     self.bridge = CvBridge()
     #self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
@@ -51,7 +60,7 @@ class image_converter:
     move.angular.z = 1
 
     #THIS IS TO START DRIVING
-    self.image_pub.publish(move)
+    #self.image_pub.publish(move)
 
     time.sleep(3)
 
@@ -64,9 +73,6 @@ class image_converter:
 
     move = Twist()
   
-
-    
-
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
@@ -77,22 +83,27 @@ class image_converter:
 
 
     gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
-
+    hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+    img = cv2.inRange(hsv, self.lower_hsv_b, self.upper_hsv_b) // 255
 
     #road is lighter than the backdrop, maybe try thresholding between 50-100
     #then taking the different between them
   
     threshold = 90
     #_, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
-    _, img = cv2.threshold(gray, threshold, 255, 0 )
+
+    #this one
+    #_, img = cv2.threshold(gray, threshold, 255, 0 )
+
     #img = img[700:800]
-    img = img[int(img.shape[0]*0.6):img.shape[0],int(img.shape[1]*0.3):int(img.shape[1]*0.7)]
+    img = img[0:int(img.shape[0]*0.7),int(img.shape[1]*0.1):int(img.shape[1]*0.9)]
+    gray = gray[0:int(img.shape[0]*0.7),int(img.shape[1]*0.1):int(img.shape[1]*0.9)]
     
 
     img = cv2.erode(img, None, iterations = 2)
 
     #I dont think we wanna invert anymore? JK WE DEF DO
-    img = np.invert(img)
+    #img = np.invert(img)
 
     cX = int(img.shape[1]*0.5)
     cY = 400
@@ -133,15 +144,15 @@ class image_converter:
       self.timeout += 1
       '''
 
-    color = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    # color = cv2.cvtColor(hsv, cv.COLOR_BGR2HSV)
     '''
     out.write(color)
     '''
-    cv2.circle(img, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
-    cv2.imshow("img", img)
+    cv2.circle(gray, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
+    cv2.imshow("img", gray)
     cv2.waitKey(2)
 
-    VelWeight = 15 #270
+    VelWeight = 15*8 #270
     cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
     '''
