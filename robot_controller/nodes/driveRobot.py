@@ -65,10 +65,6 @@ class image_converter:
     time.sleep(4)
 
 
-
-
-
-
   def callback(self,data):
 
     move = Twist()
@@ -104,7 +100,7 @@ class image_converter:
     img = cv2.erode(img, None, iterations = 4)
     img_raw = cv2.erode(img_raw, None, iterations = 4)
 
-    #I dont think we wanna invert anymore? JK WE DEF DO, double jk
+    #Don't invert anymore due to HSV filtering
     #img = np.invert(img)
 
     cX = int(img.shape[1]*0.5*0.5)
@@ -146,10 +142,9 @@ class image_converter:
       self.timeout += 1
       '''
 
-    # color = cv2.cvtColor(hsv, cv.COLOR_BGR2HSV)
-    '''
-    out.write(color)
-    '''
+     
+
+    #Next lines until break are all for testing
     cv2.circle(gray, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
     cv2.imshow("img", gray)
     cv2.waitKey(2)
@@ -158,14 +153,12 @@ class image_converter:
     cv2.imshow("img_raw", img_raw)
     cv2.waitKey(2)
 
+
+
     VelWeight = 110 #110
     cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
-    '''
-    if cX == 0:
-      cX = 1.0
-    '''
-
+    #for Testing
     print(cX)
 
     
