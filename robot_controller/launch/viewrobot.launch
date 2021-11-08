@@ -1,7 +1,9 @@
 <launch> 
-    <node pkg="enph353_ros_lab"
-         type="view_robot.py"
-         name="view_robot" 
+
+    <node pkg="robot_controller"
+         type="driveRobot.py"
+         name="driveRobot" 
          output="screen">
    </node>
+   
 </launch>
