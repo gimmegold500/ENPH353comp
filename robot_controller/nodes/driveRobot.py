@@ -56,13 +56,13 @@ class image_converter:
 
     move = Twist()
     
-    move.linear.x = 0.5
-    move.angular.z = 2
+    move.linear.x = 0.4
+    move.angular.z = 1.5
 
     #THIS IS TO START DRIVING
-    #self.image_pub.publish(move)
+    self.image_pub.publish(move)
 
-    time.sleep(3)
+    time.sleep(4)
 
 
 
@@ -73,9 +73,6 @@ class image_converter:
 
     move = Twist()
   
-
-    
-
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
@@ -100,9 +97,9 @@ class image_converter:
     #_, img = cv2.threshold(gray, threshold, 255, 0 )
 
     #img = img[700:800]
-    img = img[int(img.shape[0]*0.5):img.shape[0],int(img.shape[1]*0.3):int(img.shape[1]*0.7)]
-    gray = gray[int(gray.shape[0]*0.5):gray.shape[0],int(gray.shape[1]*0.3):int(gray.shape[1]*0.7)]
-    img_raw = img_raw[int(img_raw.shape[0]*0.5):img_raw.shape[0],int(img_raw.shape[1]*0.3):int(img_raw.shape[1]*0.7)]
+    img = img[int(img.shape[0]*0.5):img.shape[0],int(img.shape[1]*0.2):int(img.shape[1]*0.8)]
+    gray = gray[int(gray.shape[0]*0.5):gray.shape[0],int(gray.shape[1]*0.2):int(gray.shape[1]*0.8)]
+    img_raw = img_raw[int(img_raw.shape[0]*0.5):img_raw.shape[0],int(img_raw.shape[1]*0.2):int(img_raw.shape[1]*0.8)]
 
     img = cv2.erode(img, None, iterations = 4)
     img_raw = cv2.erode(img_raw, None, iterations = 4)
@@ -174,7 +171,7 @@ class image_converter:
     
 
     move.linear.x = 0.2
-    move.angular.z = cX
+    move.angular.z = -1*cX
 
 
     #THIS IS REQUIRED FOR DRIVING
