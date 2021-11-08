@@ -1,0 +1,9 @@
+<launch> 
+
+    <node pkg="robot_controller"
+         type="driveRobotIntside.py"
+         name="driveRobotInside" 
+         output="screen">
+   </node>
+   
+</launch>
