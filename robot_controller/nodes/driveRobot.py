@@ -158,7 +158,7 @@ class image_converter:
     cv2.imshow("img_raw", img_raw)
     cv2.waitKey(2)
 
-    VelWeight = 150 #270
+    VelWeight = 110 #110
     cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
     '''
