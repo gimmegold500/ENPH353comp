@@ -39,10 +39,10 @@ class image_converter:
 
     lh = 0
     ls = 0
-    lv = 83
+    lv = 80
     uh = 255
     us = 255
-    uv = 86
+    uv = 88
     self.lower_hsv_b = np.array([lh,ls,lv])
     self.upper_hsv_b = np.array([uh,us,uv])
 
@@ -56,8 +56,8 @@ class image_converter:
 
     move = Twist()
     
-    move.linear.x = 0.2
-    move.angular.z = 1
+    move.linear.x = 0.5
+    move.angular.z = 2
 
     #THIS IS TO START DRIVING
     #self.image_pub.publish(move)
@@ -87,7 +87,8 @@ class image_converter:
 
     gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
     hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-    img = cv2.inRange(hsv, self.lower_hsv_b, self.upper_hsv_b) // 255
+    img_raw= cv2.inRange(hsv, self.lower_hsv_b, self.upper_hsv_b) 
+    img = img_raw //255
 
     #road is lighter than the backdrop, maybe try thresholding between 50-100
     #then taking the different between them
@@ -99,17 +100,18 @@ class image_converter:
     #_, img = cv2.threshold(gray, threshold, 255, 0 )
 
     #img = img[700:800]
-    img = img[int(img.shape[0]*0.0):img.shape[0],int(img.shape[1]*0.1):int(img.shape[1]*0.9)]
-    gray = gray[int(img.shape[0]*0.0):img.shape[0],int(img.shape[1]*0.1):int(img.shape[1]*0.9)]
-    
+    img = img[int(img.shape[0]*0.5):img.shape[0],int(img.shape[1]*0.3):int(img.shape[1]*0.7)]
+    gray = gray[int(gray.shape[0]*0.5):gray.shape[0],int(gray.shape[1]*0.3):int(gray.shape[1]*0.7)]
+    img_raw = img_raw[int(img_raw.shape[0]*0.5):img_raw.shape[0],int(img_raw.shape[1]*0.3):int(img_raw.shape[1]*0.7)]
 
-    img = cv2.erode(img, None, iterations = 2)
+    img = cv2.erode(img, None, iterations = 4)
+    img_raw = cv2.erode(img_raw, None, iterations = 4)
 
-    #I dont think we wanna invert anymore? JK WE DEF DO
+    #I dont think we wanna invert anymore? JK WE DEF DO, double jk
     #img = np.invert(img)
 
-    cX = int(img.shape[1]*0.5)
-    cY = 400
+    cX = int(img.shape[1]*0.5*0.5)
+    cY = int(img.shape[1]*0.4*0.5)
 
     M = cv2.moments(img)
     '''
@@ -155,7 +157,11 @@ class image_converter:
     cv2.imshow("img", gray)
     cv2.waitKey(2)
 
-    VelWeight = 15 #270
+    cv2.circle(img_raw, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
+    cv2.imshow("img_raw", img_raw)
+    cv2.waitKey(2)
+
+    VelWeight = 150 #270
     cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
     '''
@@ -172,7 +178,7 @@ class image_converter:
 
 
     #THIS IS REQUIRED FOR DRIVING
-    #self.image_pub.publish(move)
+    self.image_pub.publish(move)
 
     '''
     try:
