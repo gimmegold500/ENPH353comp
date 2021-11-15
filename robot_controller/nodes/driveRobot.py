@@ -35,6 +35,10 @@ class image_converter:
     #self.image_pub = rospy.Publisher("/cmd_vel",Twist)
     self.image_pub = rospy.Publisher("/R1/cmd_vel",Twist)
 
+    self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
+    time.sleep(1)
+    self.time_pub.publish("TeamA,aileton,0,XR58")
+
     time.sleep(1)
 
     lh = 0
@@ -46,7 +50,8 @@ class image_converter:
     self.lower_hsv_b = np.array([lh,ls,lv])
     self.upper_hsv_b = np.array([uh,us,uv])
 
-  
+    self.count = 0
+
     self.bridge = CvBridge()
     #self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
     self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.callback)
@@ -66,7 +71,8 @@ class image_converter:
 
 
   def callback(self,data):
-
+    currenttime = rospy.get_rostime().secs
+    
     move = Twist()
   
     try:
@@ -165,6 +171,14 @@ class image_converter:
 
     move.linear.x = 0.2
     move.angular.z = -1*cX
+
+    #This is for stopping the timer
+    if(currenttime == 240):
+      self.time_pub.publish("TeamA,aileton,-1,XR58")
+      print("THIS SHOULD NOW STOP THE TIMER")
+
+
+    self.count += 1
 
 
     #THIS IS REQUIRED FOR DRIVING

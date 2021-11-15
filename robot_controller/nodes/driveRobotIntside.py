@@ -12,9 +12,12 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
 import time
 
 # rospy.init_node('view_robot', anonymous=True)
+
+
 
 '''
 from google.colab import drive
@@ -33,7 +36,7 @@ class image_converter:
   def __init__(self):
     
     #self.image_pub = rospy.Publisher("/cmd_vel",Twist)
-    self.image_pub = rospy.Publisher("/R1/cmd_vel",Twist)
+    self.image_pub = rospy.Publisher("/R1/cmd_vel",Twist, queue_size=1)
 
     time.sleep(1)
 
@@ -46,29 +49,33 @@ class image_converter:
     self.lower_hsv_b = np.array([lh,ls,lv])
     self.upper_hsv_b = np.array([uh,us,uv])
 
-  
+    self.count = 0
+
     self.bridge = CvBridge()
     #self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
     self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.callback)
 
     #We can either create a separate time node or include time somewhere in this
-    #self.image_sub = rospy.Subscriber("/clock", time, self.callback)
+    #self.time_sub = rospy.Subscriber("/clock", time, self.callback)
 
     move = Twist()
     
-    move.linear.x = 0.4
+    move.linear.x = 0.2
     move.angular.z = 1.5
 
     #THIS IS TO START DRIVING
     self.image_pub.publish(move)
 
-    time.sleep(4)
+    time.sleep(3)
 
 
   def callback(self,data):
 
+    self.time_pub.publish("TeamA,aileton,0,XR58")
+
     move = Twist()
-  
+    #currenttime = self.time_sub.
+
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
@@ -161,14 +168,13 @@ class image_converter:
     #for Testing
     print(cX)
 
-    
-
     move.linear.x = 0.13
     move.angular.z = -1*cX
 
 
     #THIS IS REQUIRED FOR DRIVING
     self.image_pub.publish(move)
+
 
     '''
     try:
