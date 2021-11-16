@@ -173,7 +173,7 @@ class image_converter:
     move.angular.z = -1*cX
 
     #This is for stopping the timer
-    if(currenttime == 240):
+    if(currenttime == 120):
       self.time_pub.publish("TeamA,aileton,-1,XR58")
       print("THIS SHOULD NOW STOP THE TIMER")
 
