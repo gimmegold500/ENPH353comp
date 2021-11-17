@@ -62,13 +62,13 @@ class image_converter:
 
     move = Twist()
     
-    move.linear.x = 0.4
-    move.angular.z = 1.3
+    move.linear.x = 0.2
+    move.angular.z = 0.5
 
     #THIS IS TO START DRIVING
     self.image_pub.publish(move)
 
-    time.sleep(3)
+    time.sleep(1)
 
 
   def callback(self,data):
