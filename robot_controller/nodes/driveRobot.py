@@ -51,6 +51,7 @@ class image_converter:
     self.upper_hsv_b = np.array([uh,us,uv])
 
     self.count = 0
+    self.intialtime = rospy.get_rostime().secs
 
     self.bridge = CvBridge()
     #self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
@@ -67,7 +68,7 @@ class image_converter:
     #THIS IS TO START DRIVING
     self.image_pub.publish(move)
 
-    time.sleep(4)
+    time.sleep(3)
 
 
   def callback(self,data):
@@ -173,7 +174,7 @@ class image_converter:
     move.angular.z = -1*cX
 
     #This is for stopping the timer
-    if(currenttime == 120):
+    if(currenttime-intialtime == 120):
       self.time_pub.publish("TeamA,aileton,-1,XR58")
       print("THIS SHOULD NOW STOP THE TIMER")
 
