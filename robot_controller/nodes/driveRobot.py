@@ -62,7 +62,7 @@ class image_converter:
     move = Twist()
     
     move.linear.x = 0.4
-    move.angular.z = 1.5
+    move.angular.z = 1.3
 
     #THIS IS TO START DRIVING
     self.image_pub.publish(move)
