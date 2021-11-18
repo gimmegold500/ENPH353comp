@@ -35,6 +35,8 @@ class image_converter:
     #self.image_pub = rospy.Publisher("/cmd_vel",Twist)
     self.image_pub = rospy.Publisher("/R1/cmd_vel",Twist)
 
+
+    self.flag = True
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
     time.sleep(1)
     self.time_pub.publish("TeamA,aileton,0,XR58")
@@ -52,6 +54,7 @@ class image_converter:
 
     self.count = 0
     self.intialtime = rospy.get_rostime().secs
+    
 
     self.bridge = CvBridge()
     #self.image_sub = rospy.Subscriber("/rrbot/camera1/image_raw", Image, self.callback)
@@ -59,6 +62,13 @@ class image_converter:
 
     #We can either create a separate time node or include time somewhere in this
     #self.image_sub = rospy.Subscriber("/clock", time, self.callback)
+
+    
+
+    try:
+      self.pastimage = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    except CvBridgeError as e:
+      print(e)
 
     move = Twist()
     
@@ -71,6 +81,33 @@ class image_converter:
     time.sleep(1)
 
 
+
+
+  def Stopifred(current,past,self):
+    RedThresholdLower = np.array([0,113,253])
+    RedThresholdHigher = np.array([255, 255,255])
+    currenthsv = cv2.cvtColor(current, cv2.COLOR_BGR2HSV)
+    #pasthsv = cv2.cvtColor(past, cv2.COLOR_BGR2HSV)
+    current_raw = cv2.inRange(currenthsv, RedThresholdLower, RedThresholdHigher)
+    #past_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
+    current_img = current_raw // 255
+    #past_img = past_raw // 255
+
+    current_img = current_img[int(current_img.shape[0]*0.9):current_img.shape[0],int(current_img.shape[1]*0.2):int(current_img.shape[1]*0.8)]
+    #past_img = past_img[int(past_img.shape[0]*0.9):past_img.shape[0],int(past_img.shape[1]*0.2):int(past_img.shape[1]*0.8)]
+    current_raw = current_raw[int(current_raw.shape[0]*0.9):current_raw.shape[0],int(current_raw.shape[1]*0.2):int(current_raw.shape[1]*0.8)]
+    #past_raw = past_raw[int(past_raw.shape[0]*0.9):past_raw.shape[0],int(past_raw.shape[1]*0.2):int(past_raw.shape[1]*0.8)]
+
+    if(np.sum(current_img) > 1000):
+      move.linear.x = 0
+      move.angular.z = 0
+      self.image_pub.publish(move)
+
+
+
+
+
+
   def callback(self,data):
     currenttime = rospy.get_rostime().secs
     
@@ -80,6 +117,7 @@ class image_converter:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
+
 
     #cv2.imshow("Image window", cv_image)
     #cv2.waitKey(3)
@@ -174,16 +212,33 @@ class image_converter:
     move.angular.z = -1*cX
 
     #This is for stopping the timer
-    if(currenttime-self.intialtime == 120):
-      self.time_pub.publish("TeamA,aileton,-1,XR58")
-      print("THIS SHOULD NOW STOP THE TIMER")
+
+    # CHANGE THIS TO 4 min (240) BEFORE COMPETITION!!!!
+    if(currenttime-self.intialtime >= 120):
+      if(self.flag):
+        self.time_pub.publish("TeamA,aileton,-1,XR58")
+        self.flag = False
+      #print("THIS SHOULD NOW STOP THE TIMER")
+      move.linear.x = 0
+      move.angular.z = 0
+      self.image_pub.publish(move)
+
 
 
     self.count += 1
 
 
+    #Pedestrian stuff here
+    Stopifred(cv_image,self.pastimage,self)
+
+
+
+
     #THIS IS REQUIRED FOR DRIVING
     self.image_pub.publish(move)
+    self.pastimage = cv_image
+
+    Stopifred(cv)
 
     '''
     try:
