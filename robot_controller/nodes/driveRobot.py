@@ -37,6 +37,8 @@ class image_converter:
 
 
     self.flag = True
+    self.startingdrive = True
+
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
     time.sleep(1)
     self.time_pub.publish("TeamA,aileton,0,XR58")
@@ -63,14 +65,8 @@ class image_converter:
     #We can either create a separate time node or include time somewhere in this
     #self.image_sub = rospy.Subscriber("/clock", time, self.callback)
 
-    move = Twist()
-    
-    move.linear.x = 0.2
-    move.angular.z = 1
 
-    #THIS IS TO START DRIVING
-    self.image_pub.publish(move)
-    time.sleep(2.5)
+
 
 
   '''
@@ -98,8 +94,20 @@ class image_converter:
 
   def callback(self,data):
     currenttime = rospy.get_rostime().secs
-    
+
     move = Twist()
+
+    if(self.startingdrive):
+      move.linear.x = 0.22
+      move.angular.z = 1.3
+
+      #THIS IS TO START DRIVING
+      self.image_pub.publish(move)
+      now = rospy.get_rostime().secs
+      while(rospy.get_rostime().secs - now < 1):
+        print("Starting turn")
+      
+      self.startingdrive = False
   
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -126,9 +134,9 @@ class image_converter:
     #_, img = cv2.threshold(gray, threshold, 255, 0 )
 
     #img = img[700:800]
-    img = img[int(img.shape[0]*0.5):img.shape[0],int(img.shape[1]*0.2):int(img.shape[1]*0.8)]
-    gray = gray[int(gray.shape[0]*0.5):gray.shape[0],int(gray.shape[1]*0.2):int(gray.shape[1]*0.8)]
-    img_raw = img_raw[int(img_raw.shape[0]*0.5):img_raw.shape[0],int(img_raw.shape[1]*0.2):int(img_raw.shape[1]*0.8)]
+    img = img[int(img.shape[0]*0.5):img.shape[0],int(img.shape[1]*0.3):int(img.shape[1]*0.7)]
+    gray = gray[int(gray.shape[0]*0.5):gray.shape[0],int(gray.shape[1]*0.3):int(gray.shape[1]*0.7)]
+    img_raw = img_raw[int(img_raw.shape[0]*0.5):img_raw.shape[0],int(img_raw.shape[1]*0.3):int(img_raw.shape[1]*0.7)]
 
     img = cv2.erode(img, None, iterations = 4)
     img_raw = cv2.erode(img_raw, None, iterations = 4)
@@ -188,7 +196,7 @@ class image_converter:
 
 
 
-    VelWeight = 120 #110
+    VelWeight = 105 #110
     cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
     #for Testing
@@ -235,7 +243,7 @@ class image_converter:
       current_raw = current_raw[int(current_raw.shape[0]*0.9):current_raw.shape[0],int(current_raw.shape[1]*0.2):int(current_raw.shape[1]*0.8)]
       #past_raw = past_raw[int(past_raw.shape[0]*0.9):past_raw.shape[0],int(past_raw.shape[1]*0.2):int(past_raw.shape[1]*0.8)]
 
-
+  
       if(np.sum(current_img) > 10000):
         while True:
           move.linear.x = 0
