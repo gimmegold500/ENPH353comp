@@ -63,26 +63,17 @@ class image_converter:
     #We can either create a separate time node or include time somewhere in this
     #self.image_sub = rospy.Subscriber("/clock", time, self.callback)
 
-    
-
-    try:
-      self.pastimage = self.bridge.imgmsg_to_cv2(data, "bgr8")
-    except CvBridgeError as e:
-      print(e)
-
     move = Twist()
     
     move.linear.x = 0.2
-    move.angular.z = 0.5
+    move.angular.z = 1
 
     #THIS IS TO START DRIVING
     self.image_pub.publish(move)
-
-    time.sleep(1)
-
+    time.sleep(2.5)
 
 
-
+  '''
   def Stopifred(current,past,self):
     RedThresholdLower = np.array([0,113,253])
     RedThresholdHigher = np.array([255, 255,255])
@@ -102,10 +93,7 @@ class image_converter:
       move.linear.x = 0
       move.angular.z = 0
       self.image_pub.publish(move)
-
-
-
-
+  '''
 
 
   def callback(self,data):
@@ -200,7 +188,7 @@ class image_converter:
 
 
 
-    VelWeight = 110 #110
+    VelWeight = 120 #110
     cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
     #for Testing
@@ -211,8 +199,13 @@ class image_converter:
     move.linear.x = 0.2
     move.angular.z = -1*cX
 
-    #This is for stopping the timer
 
+    #THIS IS REQUIRED FOR DRIVING
+    self.image_pub.publish(move)
+
+
+
+    #This is for stopping the timer
     # CHANGE THIS TO 4 min (240) BEFORE COMPETITION!!!!
     if(currenttime-self.intialtime >= 120):
       if(self.flag):
@@ -225,20 +218,38 @@ class image_converter:
 
 
 
-    self.count += 1
-
-
     #Pedestrian stuff here
-    Stopifred(cv_image,self.pastimage,self)
+    if(self.count > 5 ):
+      #Stopifred(cv_image,self.pastimage,self)
+      RedThresholdLower = np.array([0,113,253])
+      RedThresholdHigher = np.array([255, 255,255])
+      currenthsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+      #pasthsv = cv2.cvtColor(past, cv2.COLOR_BGR2HSV)
+      current_raw = cv2.inRange(currenthsv, RedThresholdLower, RedThresholdHigher)
+      #past_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
+      current_img = current_raw // 255
+      #past_img = past_raw // 255
+
+      current_img = current_img[int(current_img.shape[0]*0.9):current_img.shape[0],int(current_img.shape[1]*0.2):int(current_img.shape[1]*0.8)]
+      #past_img = past_img[int(past_img.shape[0]*0.9):past_img.shape[0],int(past_img.shape[1]*0.2):int(past_img.shape[1]*0.8)]
+      current_raw = current_raw[int(current_raw.shape[0]*0.9):current_raw.shape[0],int(current_raw.shape[1]*0.2):int(current_raw.shape[1]*0.8)]
+      #past_raw = past_raw[int(past_raw.shape[0]*0.9):past_raw.shape[0],int(past_raw.shape[1]*0.2):int(past_raw.shape[1]*0.8)]
 
 
+      if(np.sum(current_img) > 10000):
+        while True:
+          move.linear.x = 0
+          move.angular.z = 0
+          self.image_pub.publish(move)
+         
+      
+  
 
+    self.count += 1
 
     #THIS IS REQUIRED FOR DRIVING
     self.image_pub.publish(move)
     self.pastimage = cv_image
-
-    Stopifred(cv)
 
     '''
     try:
@@ -262,3 +273,5 @@ if __name__ == '__main__':
 video.release()
 out.release()
 '''
+
+
