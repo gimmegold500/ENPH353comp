@@ -26,6 +26,9 @@ fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 out = cv2.VideoWriter('/content/drive/My Drive/ENPH 353/robotdriver.mp4', fourcc, 20, (shape[1], shape[0]))
 '''
 
+
+previous_image = None
+
 class image_converter:
 
 
@@ -37,7 +40,8 @@ class image_converter:
 
 
     self.flag = True
-    self.startingdrive = True
+
+    self.startingdrive = True #False
 
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
     time.sleep(1)
@@ -76,15 +80,15 @@ class image_converter:
     RedThresholdHigher = np.array([255, 255,255])
     currenthsv = cv2.cvtColor(current, cv2.COLOR_BGR2HSV)
     #pasthsv = cv2.cvtColor(past, cv2.COLOR_BGR2HSV)
-    current_raw = cv2.inRange(currenthsv, RedThresholdLower, RedThresholdHigher)
-    #past_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
-    red_image = current_raw // 255
-    #past_img = past_raw // 255
+    red_raw = cv2.inRange(currenthsv, RedThresholdLower, RedThresholdHigher)
+    #past_for_pedo_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
+    red_image = red_raw // 255
+    #past_img = past_for_pedo_raw // 255
 
     red_image = red_image[int(red_image.shape[0]*0.9):red_image.shape[0],int(red_image.shape[1]*0.2):int(red_image.shape[1]*0.8)]
     #past_img = past_img[int(past_img.shape[0]*0.9):past_img.shape[0],int(past_img.shape[1]*0.2):int(past_img.shape[1]*0.8)]
-    current_raw = current_raw[int(current_raw.shape[0]*0.9):current_raw.shape[0],int(current_raw.shape[1]*0.2):int(current_raw.shape[1]*0.8)]
-    #past_raw = past_raw[int(past_raw.shape[0]*0.9):past_raw.shape[0],int(past_raw.shape[1]*0.2):int(past_raw.shape[1]*0.8)]
+    red_raw = red_raw[int(red_raw.shape[0]*0.9):red_raw.shape[0],int(red_raw.shape[1]*0.2):int(red_raw.shape[1]*0.8)]
+    #past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.9):past_for_pedo_raw.shape[0],int(past_for_pedo_raw.shape[1]*0.2):int(past_for_pedo_raw.shape[1]*0.8)]
 
     if(np.sum(red_image) > 1000):
       move.linear.x = 0
@@ -94,8 +98,9 @@ class image_converter:
 
 
   def callback(self,data):
+    global previous_image
     currenttime = rospy.get_rostime().secs
-    print("Looping")
+    #print("Looping")
 
     move = Twist()
 
@@ -140,144 +145,174 @@ class image_converter:
     RedThresholdLower = np.array([0,113,253])
     RedThresholdHigher = np.array([255, 255,255])
 
-    currenthsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+    WhiteThresholdLower = np.array([0,0,254])
+    WhiteThresholdHigher = np.array([255, 243, 255])
 
-    #past image still isn't working, plz fix
-    pasthsv = cv2.cvtColor(self.pastimage, cv2.COLOR_BGR2HSV)
+    PedoThresholdLower = np.array([100,0,43])
+    PedoThresholdHigher = np.array([117, 255, 76])
 
-    current_raw = cv2.inRange(currenthsv, RedThresholdLower, RedThresholdHigher)
-    past_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
 
-    red_image = current_raw // 255
-    white_image = current_raw // 255
-    past_image = past_raw // 255
-    current_image = current_raw // 255
+    if(self.count > 1):
  
+      currenthsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+      #past image still isn't working, plz fix
+      pasthsv = cv2.cvtColor(previous_image, cv2.COLOR_BGR2HSV)
 
-    red_image = red_image[int(red_image.shape[0]*0.9):red_image.shape[0],int(red_image.shape[1]*0.2):int(red_image.shape[1]*0.8)]
-    white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
-    past_image = past_img[int(past_img.shape[0]*0.3):int(past_img.shape[0]*0.7),int(past_img.shape[1]*0.4):int(past_img.shape[1]*0.6)]
-    current_image = current_img[int(current_img.shape[0]*0.3):int(current_img.shape[0]*0.7),int(current_img.shape[1]*0.4):int(current_img.shape[1]*0.6)]
+      red_raw = cv2.inRange(currenthsv, RedThresholdLower, RedThresholdHigher)
+      white_raw = cv2.inRange(currenthsv, WhiteThresholdLower, WhiteThresholdHigher)
+      pedo_raw = cv2.inRange(currenthsv,PedoThresholdLower,PedoThresholdHigher)
+      past_for_pedo_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
 
-    current_raw = current_raw[int(current_raw.shape[0]*0.9):current_raw.shape[0],int(current_raw.shape[1]*0.2):int(current_raw.shape[1]*0.8)]
-    past_raw = past_raw[int(past_raw.shape[0]*0.9):past_raw.shape[0],int(past_raw.shape[1]*0.2):int(past_raw.shape[1]*0.8)]
-    
-    if((np.sum(red_image) > 10000)):
-      print("Case 1 True")
-    
-    if((np.sum(white_image) > 1000)):
-      print("Case 2 True")
-
-    if(np.sum(current_image - past_image) > 50):
-      print("Case 3 True")
-
-
-    
+      red_image = red_raw // 255
+      white_image = white_raw // 255
+      current_pedo_image = pedo_raw // 255
+      past_pedo_image = past_for_pedo_raw // 255
+      
   
-    if( (np.sum(red_image) > 10000) and (np.sum(white_image) > 1000) and (np.sum(current_image - past_image) > 50)) :
-      move.linear.x = 0
-      move.angular.z = 0
-      self.vel_pub.publish(move)
-    else:
 
-      gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
-      hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-      img_raw= cv2.inRange(hsv, self.lower_hsv_b, self.upper_hsv_b) 
-      img = img_raw //255
+      red_image = red_image[int(red_image.shape[0]*0.9):red_image.shape[0],int(
+        red_image.shape[1]*0.2):int(red_image.shape[1]*0.8)]
+      white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(
+        white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
+      current_pedo_image = current_pedo_image[int(current_pedo_image.shape[0]*0.4):int(
+        current_pedo_image.shape[0]*0.6),int(current_pedo_image.shape[1]*0.4):int(current_pedo_image.shape[1]*0.6)]
+      past_pedo_image = past_pedo_image[int(past_pedo_image.shape[0]*0.4):int(
+        past_pedo_image.shape[0]*0.6),int(past_pedo_image.shape[1]*0.4):int(past_pedo_image.shape[1]*0.6)]
+     
+      red_raw = red_raw[int(red_raw.shape[0]*0.4):int(red_raw.shape[0]*0.6),int(
+        red_raw.shape[1]*0.4):int(red_raw.shape[1]*0.6)]
+      white_raw = white_raw[int(white_raw.shape[0]*0.5):int(white_raw.shape[0]*0.8),int(
+        white_raw.shape[1]*0.45):int(white_raw.shape[1]*0.55)]
+      pedo_raw = pedo_raw[int(pedo_raw.shape[0]*0.4):int(
+        pedo_raw.shape[0]*0.6),int(pedo_raw.shape[1]*0.4):int(pedo_raw.shape[1]*0.6)]
+      past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.4):int(
+        past_for_pedo_raw.shape[0]*0.6),int(past_for_pedo_raw.shape[1]*0.4):int(past_for_pedo_raw.shape[1]*0.6)]
 
-      #road is lighter than the backdrop, maybe try thresholding between 50-100
-      #then taking the different between them
-      #We dont use this anymore due to using HSV value filtering
-      threshold = 90
-      #_, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
+      difference_image = current_pedo_image - past_pedo_image
+      difference_raw = pedo_raw - past_for_pedo_raw
+      
+      
+      #if((np.sum(red_image) > 10000)):
+        #print("Red line stope")
+      
+      
+      #if((np.sum(white_image) > 1000)):
+        #print("White stop")
+      
+      
+      #if(np.sum(difference_image) > 50):
+        #print("Pedo moving")
 
-      #this one
-      #_, img = cv2.threshold(gray, threshold, 255, 0 )
+      cv2.imshow("difference", difference_raw)
+      cv2.waitKey(2)
 
-      #img = img[700:800]
-      img = img[int(img.shape[0]*0.5):img.shape[0],int(img.shape[1]*0.3):int(img.shape[1]*0.7)]
-      gray = gray[int(gray.shape[0]*0.5):gray.shape[0],int(gray.shape[1]*0.3):int(gray.shape[1]*0.7)]
-      img_raw = img_raw[int(img_raw.shape[0]*0.5):img_raw.shape[0],int(img_raw.shape[1]*0.3):int(img_raw.shape[1]*0.7)]
-
-      img = cv2.erode(img, None, iterations = 4)
-      img_raw = cv2.erode(img_raw, None, iterations = 4)
-
-      #Don't invert anymore due to HSV filtering
-      #img = np.invert(img)
-
-
-      #Just incase moments is 0 
-      cX = int(img.shape[1]*0.5*0.5)
-      cY = int(img.shape[1]*0.4*0.5)
-
-
-      M = cv2.moments(img)
-      '''
-      try:
-        cX = int(M["m10"] / M["m00"])
-        #cY = int(M["m01"] / M["m00"]) + 700
-      except ZeroDivisionError:
-        pass
-      '''
-
-      #calculating moments
-      if(M["m00"] != 0):
-              
-        #print("1")
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        #print("2")
-        #self.timeout = 0
-        #print("cX:")
-        #print("CX: {:}".format(cX))
-              
-        #print("3")
-        #width = np.shape(gray)[1]
-        #im_width = width // 10
-        #print("width:")
-        #print(width)
-
-        #subsection = int(cX / im_width)
-              
-        #print("subsection: {:}".format(subsection))
-        #print(cX)
-
-        #state[subsection] = 1
-        '''
-      else:
-        self.timeout += 1
-        '''
-
+      cv2.imshow("Red", red_raw)
+      cv2.waitKey(2)
+      
+      
     
-      #Next lines until break are all for testing
-      cv2.circle(gray, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
-      cv2.imshow("img", gray)
-      cv2.waitKey(2)
+      if((np.sum(red_image) > 10000) 
+            #and (np.sum(white_image) > 1000) 
+            and (np.sum(current_pedo_image - past_pedo_image) > 50) ) :
+        move.linear.x = 0
+        move.angular.z = 0
+        self.vel_pub.publish(move)
+        print("Should Be Stopped!!!")
+      #'''
+      else:
 
-      cv2.circle(img_raw, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
-      cv2.imshow("img_raw", img_raw)
-      cv2.waitKey(2)
+        gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
+        hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+        img_raw= cv2.inRange(hsv, self.lower_hsv_b, self.upper_hsv_b) 
+        img = img_raw //255
+
+        #road is lighter than the backdrop, maybe try thresholding between 50-100
+        #then taking the different between them
+        #We dont use this anymore due to using HSV value filtering
+        threshold = 90
+        #_, img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
+
+        #this one
+        #_, img = cv2.threshold(gray, threshold, 255, 0 )
+
+        #img = img[700:800]
+        img = img[int(img.shape[0]*0.6):img.shape[0],int(img.shape[1]*0.2):int(img.shape[1]*0.8)]
+        gray = gray[int(gray.shape[0]*0.6):gray.shape[0],int(gray.shape[1]*0.2):int(gray.shape[1]*0.8)]
+        img_raw = img_raw[int(img_raw.shape[0]*0.6):img_raw.shape[0],int(img_raw.shape[1]*0.2):int(img_raw.shape[1]*0.8)]
+
+        img = cv2.erode(img, None, iterations = 4)
+        img_raw = cv2.erode(img_raw, None, iterations = 4)
+
+        #Don't invert anymore due to HSV filtering
+        #img = np.invert(img)
 
 
-      #How good the PID is
-      VelWeight = 105 #110
-      cX = 1*(cX - img.shape[1]*0.5)/VelWeight
+        #Just incase moments is 0 
+        cX = int(img.shape[1]*0.5*0.5)
+        cY = int(img.shape[1]*0.8*0.5)
 
-      #for Testing
-      print(cX)
 
-      move.linear.x = 0.2
-      move.angular.z = -1*cX
+        M = cv2.moments(img)
+        
+        #calculating moments
+        if(M["m00"] != 0):
+                
+          #print("1")
+          cX = int(M["m10"] / M["m00"])
+          cY = int(M["m01"] / M["m00"])
+          #print("2")
+          #self.timeout = 0
+          #print("cX:")
+          #print("CX: {:}".format(cX))
+                
+          #print("3")
+          #width = np.shape(gray)[1]
+          #im_width = width // 10
+          #print("width:")
+          #print(width)
 
-      #THIS IS REQUIRED FOR DRIVING
-      self.vel_pub.publish(move)
-         
+          #subsection = int(cX / im_width)
+                
+          #print("subsection: {:}".format(subsection))
+          #print(cX)
+
+          #state[subsection] = 1
+        
+        #else:
+          #self.timeout += 1
+        
+          
+        
+      
+        #Next lines until break are all for testing
+        cv2.circle(gray, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
+        cv2.imshow("img", gray)
+        cv2.waitKey(2)
+
+        cv2.circle(img_raw, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
+        cv2.imshow("img_raw", img_raw)
+        cv2.waitKey(2)
+
+
+        #How good the PID is
+        VelWeight = 250 #110
+        cX = 1*(cX - img.shape[1]*0.5)/VelWeight
+
+        #for Testing
+        print(cX)
+
+        move.linear.x = 0.2
+        move.angular.z = -1*cX
+
+        #THIS IS REQUIRED FOR DRIVING
+        self.vel_pub.publish(move)
+    #''' 
       
   
 
     self.count += 1
 
-    self.pastimage = willBePast
+    previous_image = willBePast
 
     '''
     try:
