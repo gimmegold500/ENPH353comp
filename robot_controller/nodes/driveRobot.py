@@ -42,6 +42,7 @@ class image_converter:
     self.flag = True
 
     self.startingdrive = True #False
+    self.pedoseen = 0
 
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
     time.sleep(1)
@@ -176,32 +177,31 @@ class image_converter:
       white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(
         white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
       current_pedo_image = current_pedo_image[int(current_pedo_image.shape[0]*0.5):int(
-        current_pedo_image.shape[0]*0.65),int(current_pedo_image.shape[1]*0.45):int(current_pedo_image.shape[1]*0.55)]
+        current_pedo_image.shape[0]*0.6),int(current_pedo_image.shape[1]*0.45):int(current_pedo_image.shape[1]*0.55)]
       past_pedo_image = past_pedo_image[int(past_pedo_image.shape[0]*0.5):int(
-        past_pedo_image.shape[0]*0.65),int(past_pedo_image.shape[1]*0.45):int(past_pedo_image.shape[1]*0.55)]
+        past_pedo_image.shape[0]*0.6),int(past_pedo_image.shape[1]*0.45):int(past_pedo_image.shape[1]*0.55)]
      
       red_raw = red_raw[int(red_raw.shape[0]*0.4):int(red_raw.shape[0]*0.6),int(
         red_raw.shape[1]*0.4):int(red_raw.shape[1]*0.6)]
       white_raw = white_raw[int(white_raw.shape[0]*0.5):int(white_raw.shape[0]*0.8),int(
         white_raw.shape[1]*0.45):int(white_raw.shape[1]*0.55)]
       pedo_raw = pedo_raw[int(pedo_raw.shape[0]*0.5):int(
-        pedo_raw.shape[0]*0.65),int(pedo_raw.shape[1]*0.45):int(pedo_raw.shape[1]*0.55)]
+        pedo_raw.shape[0]*0.6),int(pedo_raw.shape[1]*0.45):int(pedo_raw.shape[1]*0.55)]
       past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.5):int(
-        past_for_pedo_raw.shape[0]*0.65),int(past_for_pedo_raw.shape[1]*0.45):int(past_for_pedo_raw.shape[1]*0.55)]
+        past_for_pedo_raw.shape[0]*0.6),int(past_for_pedo_raw.shape[1]*0.45):int(past_for_pedo_raw.shape[1]*0.55)]
 
       difference_image = current_pedo_image - past_pedo_image
       difference_raw = pedo_raw - past_for_pedo_raw
       
       
-      if((np.sum(red_image) > 10000)):
-        print("Red line stop")
+
       
       
       #if((np.sum(white_image) > 1000)):
         #print("White stop")
       
       
-      if(np.sum(difference_image) > 150):
+      if(np.sum(difference_raw > 100)):
         print("Pedo moving")
 
       cv2.imshow("difference", difference_raw)
@@ -215,15 +215,25 @@ class image_converter:
 
       if(self.redcounter > 0):
         self.redcounter -= 1
+        print("Red stop")
+
       
       
     
-      if(self.redcounter > 0 
+      if((self.redcounter > 0 
             #and (np.sum(white_image) > 1000) 
             #and (np.sum(current_pedo_image - past_pedo_image) > 150) 
-            and (np.sum(difference_raw) > 150 )) :
-        print(np.sum(current_pedo_image - past_pedo_image))
+            and (np.sum(difference_raw) > 100 )) or self.pedoseen > 0 ) :
+
+        if(self.pedoseen <= 0):
+          self.pedoseen = 20
+        else:
+          self.pedoseen -= 1
+        
+        print("difference: ")
         print(np.sum(difference_raw))
+        print("pedo seen: ")
+        print(pedoseen)
         move.linear.x = 0
         move.angular.z = 0
         self.vel_pub.publish(move)
