@@ -213,7 +213,7 @@ class image_converter:
       if(np.sum(red_image) > 10000):
         self.redcounter = 6
 
-      if(self.redcounter > 0):
+      if(self.redcounter > 0 and self.pedoseen == 0):
         self.redcounter -= 1
         print("Red stop")
 
@@ -226,7 +226,7 @@ class image_converter:
             and (np.sum(difference_raw) > 100 )) or self.pedoseen > 0 ) :
 
         if(self.pedoseen <= 0):
-          self.pedoseen = 20
+          self.pedoseen = 7
         else:
           self.pedoseen -= 1
         
