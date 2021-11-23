@@ -233,7 +233,7 @@ class image_converter:
         print("difference: ")
         print(np.sum(difference_raw))
         print("pedo seen: ")
-        print(pedoseen)
+        print(self.pedoseen)
         move.linear.x = 0
         move.angular.z = 0
         self.vel_pub.publish(move)
