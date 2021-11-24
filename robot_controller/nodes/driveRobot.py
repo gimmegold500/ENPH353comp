@@ -48,6 +48,8 @@ class image_converter:
     time.sleep(1)
     self.time_pub.publish("TeamA,aileton,0,XR58")
     self.redcounter = 0
+    self.redcounterdriving = 0
+    self.whitecounter = 0
 
     time.sleep(1)
 
@@ -177,18 +179,18 @@ class image_converter:
       white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(
         white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
       current_pedo_image = current_pedo_image[int(current_pedo_image.shape[0]*0.5):int(
-        current_pedo_image.shape[0]*0.6),int(current_pedo_image.shape[1]*0.45):int(current_pedo_image.shape[1]*0.55)]
+        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.3):int(current_pedo_image.shape[1]*0.55)]
       past_pedo_image = past_pedo_image[int(past_pedo_image.shape[0]*0.5):int(
-        past_pedo_image.shape[0]*0.6),int(past_pedo_image.shape[1]*0.45):int(past_pedo_image.shape[1]*0.55)]
+        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.3):int(past_pedo_image.shape[1]*0.55)]
      
       red_raw = red_raw[int(red_raw.shape[0]*0.4):int(red_raw.shape[0]*0.6),int(
         red_raw.shape[1]*0.4):int(red_raw.shape[1]*0.6)]
       white_raw = white_raw[int(white_raw.shape[0]*0.5):int(white_raw.shape[0]*0.8),int(
         white_raw.shape[1]*0.45):int(white_raw.shape[1]*0.55)]
       pedo_raw = pedo_raw[int(pedo_raw.shape[0]*0.5):int(
-        pedo_raw.shape[0]*0.6),int(pedo_raw.shape[1]*0.45):int(pedo_raw.shape[1]*0.55)]
+        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.3):int(pedo_raw.shape[1]*0.55)]
       past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.5):int(
-        past_for_pedo_raw.shape[0]*0.6),int(past_for_pedo_raw.shape[1]*0.45):int(past_for_pedo_raw.shape[1]*0.55)]
+        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.3):int(past_for_pedo_raw.shape[1]*0.55)]
 
       difference_image = current_pedo_image - past_pedo_image
       difference_raw = pedo_raw - past_for_pedo_raw
@@ -197,36 +199,48 @@ class image_converter:
 
       
       
-      #if((np.sum(white_image) > 1000)):
-        #print("White stop")
+      if((np.sum(white_image) > 1500)):
+        print("White val:")
+        print(np.sum(white_image))
+        self.whitecounter = 15
+
+      if(self.whitecounter > 0):
+        self.whitecounter -= 1
       
-      
-      if(np.sum(difference_raw > 100)):
-        print("Pedo moving")
+      if(np.sum(difference_raw > 10000)):
+        
+        print("Pedo moving with:")
+        print(np.sum(difference_raw))
 
       cv2.imshow("difference", difference_raw)
       cv2.waitKey(2)
 
-      cv2.imshow("Red", red_raw)
+      cv2.imshow("White", white_raw)
       cv2.waitKey(2)
 
+      #cv2.imshow("Red", red_raw)
+      #cv2.waitKey(2)
+
       if(np.sum(red_image) > 10000):
-        self.redcounter = 6
+        self.redcounter = 10
+        self.redcounterdriving = 15
 
       if(self.redcounter > 0 and self.pedoseen == 0):
         self.redcounter -= 1
         print("Red stop")
 
+      if(self.redcounterdriving > 0):
+        self.redcounterdriving -= 1
       
       
     
       if((self.redcounter > 0 
-            #and (np.sum(white_image) > 1000) 
+            and (np.sum(white_image) > 2000) 
             #and (np.sum(current_pedo_image - past_pedo_image) > 150) 
-            and (np.sum(difference_raw) > 100 )) or self.pedoseen > 0 ) :
+            and (np.sum(difference_raw) > 10000 )) or self.pedoseen > 0 ) :
 
         if(self.pedoseen <= 0):
-          self.pedoseen = 7
+          self.pedoseen = 10
         else:
           self.pedoseen -= 1
         
@@ -238,6 +252,52 @@ class image_converter:
         move.angular.z = 0
         self.vel_pub.publish(move)
         print("Should Be Stopped!!!")
+      elif(self.redcounterdriving > 0 and (self.whitecounter) > 0):
+
+        gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
+        hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+        img_raw= cv2.inRange(hsv, self.lower_hsv_b, self.upper_hsv_b) 
+        img = img_raw //255
+
+        img = img[int(img.shape[0]*0.6):img.shape[0],int(img.shape[1]*0.2):int(img.shape[1]*0.8)]
+        gray = gray[int(gray.shape[0]*0.6):gray.shape[0],int(gray.shape[1]*0.2):int(gray.shape[1]*0.8)]
+        img_raw = img_raw[int(img_raw.shape[0]*0.6):img_raw.shape[0],int(img_raw.shape[1]*0.2):int(img_raw.shape[1]*0.8)]
+
+        img = cv2.erode(img, None, iterations = 4)
+        img_raw = cv2.erode(img_raw, None, iterations = 4)
+
+        #Just incase moments is 0 
+        cX = int(img.shape[1]*0.5*0.5)
+        cY = int(img.shape[1]*0.8*0.5)
+
+
+        M = cv2.moments(img)
+        
+        #calculating moments
+        if(M["m00"] != 0):
+          cX = int(M["m10"] / M["m00"])
+          cY = int(M["m01"] / M["m00"])
+
+      
+        #Next lines until break are all for testing
+        cv2.circle(gray, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
+        cv2.imshow("img", gray)
+        cv2.waitKey(2)
+
+        #How good the PID is
+        VelWeight = 215 #110
+        cX = 1*(cX - img.shape[1]*0.5)/VelWeight
+
+        #for Testing
+        print(cX)
+
+        move.linear.x = 0.45
+        move.angular.z = -1*cX
+
+        print("fast driving")
+
+        self.vel_pub.publish(move)
+
       #'''
       else:
 
@@ -309,9 +369,9 @@ class image_converter:
         cv2.imshow("img", gray)
         cv2.waitKey(2)
 
-        cv2.circle(img_raw, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
-        cv2.imshow("img_raw", img_raw)
-        cv2.waitKey(2)
+        #cv2.circle(img_raw, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
+        #cv2.imshow("img_raw", img_raw)
+        #cv2.waitKey(2)
 
 
         #How good the PID is
@@ -321,8 +381,15 @@ class image_converter:
         #for Testing
         print(cX)
 
-        move.linear.x = 0.2
-        move.angular.z = -1*cX
+
+        
+        if(abs(cX) < 0.4):
+          move.linear.x = 0.18 #0.2 normally testing 0.18
+          move.angular.z = -1*cX
+        else:
+          move.linear.x = 0.12 #0.2 normally testing 0.18
+          move.angular.z = -1*cX
+
 
         #THIS IS REQUIRED FOR DRIVING
         self.vel_pub.publish(move)
