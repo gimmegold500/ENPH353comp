@@ -38,6 +38,8 @@ class image_converter:
     #self.vel_pub = rospy.Publisher("/cmd_vel",Twist)
     self.vel_pub = rospy.Publisher("/R1/cmd_vel",Twist)
 
+    self.basespeedhigher = 0.18
+    self.basespeedlower = 0.12
 
     self.flag = True
 
@@ -46,13 +48,18 @@ class image_converter:
 
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
     time.sleep(1)
-    self.time_pub.publish("TeamA,aileton,0,XR58")
+    self.time_pub.publish("Bestie,Bestie,0,XR58")
     self.redcounter = 0
     self.redcounterdriving = 0
     self.whitecounter = 0
+    self.firstsawthecar = 240
+
+    self.turnleft = 0
+    self.lookforintersections = False
 
     time.sleep(1)
 
+    #for the road
     lh = 0
     ls = 0
     lv = 80
@@ -61,6 +68,41 @@ class image_converter:
     uv = 88
     self.lower_hsv_b = np.array([lh,ls,lv])
     self.upper_hsv_b = np.array([uh,us,uv])
+
+    # blue
+    lhblue = 116
+    lsblue = 40
+    lvblue = 41
+    uhblue = 124
+    usblue = 255
+    uvblue = 255
+    self.lower_hsv_blue = np.array([lhblue,lsblue,lvblue])
+    self.upper_hsv_blue = np.array([uhblue,usblue,uvblue])
+
+    # dark thresholds
+    lhdarkb = 0
+    lsdarkb = 0
+    lvdarkb = 94
+    uhdarkb = 0
+    usdarkb = 0
+    uvdarkb = 140
+    self.lower_hsv_w_dark = np.array([lhdarkb,lsdarkb,lvdarkb])
+    self.upper_hsv_w_dark = np.array([uhdarkb,usdarkb,uvdarkb])
+
+    # light thresholds
+    lhlightb = 90
+    lslightb = 0
+    lvlightb = 74
+    uhlightb = 123
+    uslightb = 47
+    uvlightb = 96
+    self.lower_hsv_plate_dark = np.array([lhlightb, lslightb, lvlightb])
+    self.upper_hsv_plate_dark = np.array([uhlightb, uslightb, uvlightb])
+
+    self.lower_hsv_w_bright = np.array([0, 0, 191])
+    self.upper_hsv_w_bright = np.array([0, 0, 206])
+    self.lower_hsv_plate_bright = np.array([103, 0, 112])
+    self.upper_hsv_plate_bright = np.array([155, 35, 184])
 
     self.count = 0
     self.intialtime = rospy.get_rostime().secs
@@ -77,28 +119,6 @@ class image_converter:
 
 
 
-
-  '''
-  def Stopifred(current,past,self):
-    RedThresholdLower = np.array([0,113,253])
-    RedThresholdHigher = np.array([255, 255,255])
-    currenthsv = cv2.cvtColor(current, cv2.COLOR_BGR2HSV)
-    #pasthsv = cv2.cvtColor(past, cv2.COLOR_BGR2HSV)
-    red_raw = cv2.inRange(currenthsv, RedThresholdLower, RedThresholdHigher)
-    #past_for_pedo_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
-    red_image = red_raw // 255
-    #past_img = past_for_pedo_raw // 255
-
-    red_image = red_image[int(red_image.shape[0]*0.9):red_image.shape[0],int(red_image.shape[1]*0.2):int(red_image.shape[1]*0.8)]
-    #past_img = past_img[int(past_img.shape[0]*0.9):past_img.shape[0],int(past_img.shape[1]*0.2):int(past_img.shape[1]*0.8)]
-    red_raw = red_raw[int(red_raw.shape[0]*0.9):red_raw.shape[0],int(red_raw.shape[1]*0.2):int(red_raw.shape[1]*0.8)]
-    #past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.9):past_for_pedo_raw.shape[0],int(past_for_pedo_raw.shape[1]*0.2):int(past_for_pedo_raw.shape[1]*0.8)]
-
-    if(np.sum(red_image) > 1000):
-      move.linear.x = 0
-      move.angular.z = 0
-      self.vel_pub.publish(move)
-  '''
 
 
   def callback(self,data):
@@ -135,7 +155,7 @@ class image_converter:
     # CHANGE THIS TO 4 min (240) BEFORE COMPETITION!!!!
     if(currenttime-self.intialtime >= 240):
       if(self.flag):
-        self.time_pub.publish("TeamA,aileton,-1,XR58")
+        self.time_pub.publish("Bestie,Bestie,-1,XR58")
         self.flag = False
       #print("THIS SHOULD NOW STOP THE TIMER")
       move.linear.x = 0
@@ -145,7 +165,7 @@ class image_converter:
 
     #Pedestrian stuff here
     
-    #Stopifred(cv_image,self.pastimage,self)
+    
     RedThresholdLower = np.array([0,113,253])
     RedThresholdHigher = np.array([255, 255,255])
 
@@ -167,36 +187,33 @@ class image_converter:
       pedo_raw = cv2.inRange(currenthsv,PedoThresholdLower,PedoThresholdHigher)
       past_for_pedo_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
 
-      red_image = red_raw // 255
+      diswhiteline_image = red_raw // 255
       white_image = white_raw // 255
       current_pedo_image = pedo_raw // 255
       past_pedo_image = past_for_pedo_raw // 255
       
   
 
-      red_image = red_image[int(red_image.shape[0]*0.9):red_image.shape[0],int(
-        red_image.shape[1]*0.2):int(red_image.shape[1]*0.8)]
+      diswhiteline_image = diswhiteline_image[int(diswhiteline_image.shape[0]*0.9):diswhiteline_image.shape[0],int(
+        diswhiteline_image.shape[1]*0.2):int(diswhiteline_image.shape[1]*0.8)]
       white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(
         white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
       current_pedo_image = current_pedo_image[int(current_pedo_image.shape[0]*0.5):int(
-        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.3):int(current_pedo_image.shape[1]*0.55)]
+        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.3):int(current_pedo_image.shape[1]*0.6)]
       past_pedo_image = past_pedo_image[int(past_pedo_image.shape[0]*0.5):int(
-        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.3):int(past_pedo_image.shape[1]*0.55)]
+        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.3):int(past_pedo_image.shape[1]*0.6)]
      
       red_raw = red_raw[int(red_raw.shape[0]*0.4):int(red_raw.shape[0]*0.6),int(
         red_raw.shape[1]*0.4):int(red_raw.shape[1]*0.6)]
       white_raw = white_raw[int(white_raw.shape[0]*0.5):int(white_raw.shape[0]*0.8),int(
         white_raw.shape[1]*0.45):int(white_raw.shape[1]*0.55)]
       pedo_raw = pedo_raw[int(pedo_raw.shape[0]*0.5):int(
-        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.3):int(pedo_raw.shape[1]*0.55)]
+        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.3):int(pedo_raw.shape[1]*0.6)]
       past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.5):int(
-        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.3):int(past_for_pedo_raw.shape[1]*0.55)]
+        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.3):int(past_for_pedo_raw.shape[1]*0.6)]
 
       difference_image = current_pedo_image - past_pedo_image
       difference_raw = pedo_raw - past_for_pedo_raw
-      
-      
-
       
       
       if((np.sum(white_image) > 1500)):
@@ -221,7 +238,7 @@ class image_converter:
       #cv2.imshow("Red", red_raw)
       #cv2.waitKey(2)
 
-      if(np.sum(red_image) > 10000):
+      if(np.sum(diswhiteline_image) > 10000):
         self.redcounter = 10
         self.redcounterdriving = 15
 
@@ -231,13 +248,12 @@ class image_converter:
 
       if(self.redcounterdriving > 0):
         self.redcounterdriving -= 1
-      
-      
+
     
       if((self.redcounter > 0 
             and (np.sum(white_image) > 2000) 
             #and (np.sum(current_pedo_image - past_pedo_image) > 150) 
-            and (np.sum(difference_raw) > 10000 )) or self.pedoseen > 0 ) :
+            and (np.sum(difference_raw) > 50000 )) or self.pedoseen > 0 ) :
 
         if(self.pedoseen <= 0):
           self.pedoseen = 10
@@ -253,6 +269,7 @@ class image_converter:
         self.vel_pub.publish(move)
         print("Should Be Stopped!!!")
       elif(self.redcounterdriving > 0 and (self.whitecounter) > 0):
+        self.turnleft += 1
 
         gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
@@ -382,12 +399,13 @@ class image_converter:
         print(cX)
 
 
+
         
         if(abs(cX) < 0.4):
-          move.linear.x = 0.18 #0.2 normally testing 0.18
+          move.linear.x = self.basespeedhigher 
           move.angular.z = -1*cX
         else:
-          move.linear.x = 0.12 #0.2 normally testing 0.18
+          move.linear.x = self.basespeedlower 
           move.angular.z = -1*cX
 
 
@@ -396,6 +414,94 @@ class image_converter:
     #''' 
       
   
+
+    
+    if(self.turnleft > 25):
+      print("turnleft:")
+      print(self.turnleft)
+
+      imgforbluecar = self.bridge.imgmsg_to_cv2(data, "bgr8")
+      height = imgforbluecar.shape[0]
+      width = imgforbluecar.shape[1]
+      imgforbluecar = imgforbluecar[height // 2 :  (3 * height) // 4]
+      hsv = cv2.cvtColor(imgforbluecar, cv2.COLOR_BGR2HSV)
+
+      # get masks
+      mask_blue = cv2.inRange(hsv, self.lower_hsv_blue, self.upper_hsv_blue) // 255
+      mask_white_dark = cv2.inRange(hsv, self.lower_hsv_w_dark, self.upper_hsv_w_dark) // 255
+      mask_white_bright = cv2.inRange(hsv, self.lower_hsv_w_bright, self.upper_hsv_w_bright) // 255
+      mask_plate_dark = cv2.inRange(hsv, self.lower_hsv_plate_dark, self.upper_hsv_plate_dark) // 255
+      mask_plate_bright = cv2.inRange(hsv, self.lower_hsv_plate_bright, self.upper_hsv_plate_bright) // 255
+
+      # erode and dilate images
+      kernel_3 = np.ones((3, 3), np.uint8)
+      kernel_5 = np.ones((5, 5), np.uint8)
+
+      # slice images in half
+      mask_white_dark = cleanImage(mask_white_dark, kernel_5)
+      mask_white_bright = cleanImage(mask_white_bright, kernel_5)
+      mask_plate_dark = cleanImage(mask_plate_dark, kernel_3)
+      mask_plate_bright = cleanImage(mask_plate_bright, kernel_3)
+
+      mask_blue_l = mask_blue[:,0:width // 2]
+      mask_white_bright_l = mask_white_bright[:,0:width // 2]
+      mask_white_dark_l = mask_white_dark[:, 0:width//2]
+      mask_plate_bright_l = mask_plate_bright[:, 0:width//2]
+      mask_plate_dark_l = mask_plate_dark[:, 0:width//2]
+
+      # process car if needed
+        
+      if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
+          #process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
+
+          print("light TRUE")
+          self.turnleft = 0
+          self.lookforintersections = True
+          self.firstsawthecar = rospy.get_rostime().secs
+
+    if(self.lookforintersections and (rospy.get_rostime().secs - self.firstsawthecar) > 3 ):
+
+      WhiteThresholdLower = np.array([0,0,254])
+      WhiteThresholdHigher = np.array([255, 243, 255])
+
+
+      currenthsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+
+      diswhiteline_raw = cv2.inRange(currenthsv, WhiteThresholdLower, WhiteThresholdHigher)
+
+      diswhiteline_image = diswhiteline_raw // 255
+
+      diswhiteline_image = diswhiteline_image[int(diswhiteline_image.shape[0]*0.2):diswhiteline_image.shape[0],int(
+        diswhiteline_image.shape[1]*0.2):int(diswhiteline_image.shape[1]*0.4)]
+
+
+      diswhiteline_raw = diswhiteline_raw[int(diswhiteline_raw.shape[0]*0.2):diswhiteline_raw.shape[0],int(
+        diswhiteline_raw.shape[1]*0.2):int(diswhiteline_raw.shape[1]*0.4)]
+
+
+      cv2.imshow("looking for white line", diswhiteline_raw)
+      cv2.waitKey(2)
+
+      print(np.sum(diswhiteline_image))
+
+      if(np.sum(diswhiteline_image) < 1000):
+        self.basespeedhigher = 0.09
+        self.basespeedlower = 0.09
+
+        move.linear.x = 0.2
+        move.angular.z = 1.0
+
+        #THIS IS TO START DRIVING
+        self.vel_pub.publish(move)
+        now = rospy.get_rostime().secs
+        while(rospy.get_rostime().secs - now < 3):
+          print("Left turn")
+
+        self.lookforintersections = False
+
+      
+
+    
 
     self.count += 1
 
@@ -407,6 +513,18 @@ class image_converter:
     except CvBridgeError as e:
       print(e)
     '''
+
+
+  
+def cleanImage(image, kernel):
+    image = cv2.erode(image, kernel, iterations=1)
+    return cv2.dilate(image, kernel, iterations=1)
+
+
+def car_is_spotted(self, blue_vals, white_vals, grey_vals):
+    print(np.sum(grey_vals))
+    return np.sum(blue_vals) > 25000 and np.sum(blue_vals) < 37500 and np.sum(white_vals) > 500
+
 def main(args):
   rospy.init_node('image_converter', anonymous=True)
   ic = image_converter()
@@ -423,5 +541,3 @@ if __name__ == '__main__':
 video.release()
 out.release()
 '''
-
-
