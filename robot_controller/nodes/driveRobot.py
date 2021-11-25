@@ -43,7 +43,7 @@ class image_converter:
 
     self.flag = True
 
-    self.startingdrive = True #False 
+    self.startingdrive = False #True 
     self.pedoseen = 0
 
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
@@ -100,10 +100,10 @@ class image_converter:
     self.lower_hsv_plate_dark = np.array([lhlightb, lslightb, lvlightb])
     self.upper_hsv_plate_dark = np.array([uhlightb, uslightb, uvlightb])
 
-    # car thresholds
+    # car_image thresholds
     lhcar = 0
     lscar = 0
-    lvcar = 88
+    lvcar = 99
     uhcar = 255
     uscar = 1
     uvcar = 255
@@ -325,16 +325,25 @@ class image_converter:
         print("fast driving")
 
         self.vel_pub.publish(move)
-      elif(self.carwatching > 0):
+      elif(self.carwatching > 0 and self.carwatching != 10):
+        
         carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
-        car = car_raw // 255
+        car_image = car_raw // 255
 
-        car =  car[int(car.shape[0]):car.shape[0],int(car.shape[1]*0.4):int(car.shape[1])]
+        car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0.4):int(car_image.shape[1])]
+        car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0.4):int(car_raw.shape[1])]
 
-        if(np.sum(car) > 10000):
+        cv2.imshow("car", car_raw)
+        cv2.waitKey(2)
 
-          while(np.sum(car) > 10000):
+        print("seeing if car_image closeby")
+        print(np.sum(car_image))
+
+        if(np.sum(car_image) > 10000):
+
+          while(np.sum(car_image) > 10000):
+            print(np.sum(car_image))
             print("STOPPING DUE TO GRAY CAR")
             move.linear.x = 0
             move.angular.z = 0
@@ -344,6 +353,9 @@ class image_converter:
 
       #'''
       else:
+
+        if(self.carwatching == 10):
+          self.carwatching -= 1
 
         gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
@@ -476,7 +488,7 @@ class image_converter:
       mask_plate_bright_l = mask_plate_bright[:, 0:width//2]
       mask_plate_dark_l = mask_plate_dark[:, 0:width//2]
 
-      # process car if needed
+      # process car_image if needed
         
       if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
           #process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
@@ -490,7 +502,6 @@ class image_converter:
 
       WhiteThresholdLower = np.array([0,0,254])
       WhiteThresholdHigher = np.array([255, 243, 255])
-
 
       currenthsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
@@ -512,8 +523,8 @@ class image_converter:
       print(np.sum(diswhiteline_image))
 
       if(np.sum(diswhiteline_image) < 1000):
-        self.basespeedhigher = 0.13
-        self.basespeedlower = 0.09
+        self.basespeedhigher = 0.15
+        self.basespeedlower = 0.10
 
         move.linear.x = 0.2
         move.angular.z = 0.9
@@ -533,6 +544,12 @@ class image_converter:
     
 
     self.count += 1
+
+
+    #Remove this when done
+    if(self.count == 10):
+      print("SWITCH STATEMENT")
+      self.carwatching = 10
 
     previous_image = willBePast
 
