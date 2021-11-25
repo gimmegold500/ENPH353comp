@@ -56,6 +56,7 @@ class image_converter:
 
     self.turnleft = 0
     self.lookforintersections = False
+    self.carwatching = False
 
     time.sleep(1)
 
@@ -98,6 +99,16 @@ class image_converter:
     uvlightb = 96
     self.lower_hsv_plate_dark = np.array([lhlightb, lslightb, lvlightb])
     self.upper_hsv_plate_dark = np.array([uhlightb, uslightb, uvlightb])
+
+    # car thresholds
+    lhcar = 0
+    lscar = 0
+    lvcar = 88
+    uhcar = 255
+    uscar = 1
+    uvcar = 255
+    self.lower_hsv_car = np.array([lhcar, lscar, lvcar])
+    self.upper_hsv_car = np.array([uhcar, uscar, uvcar])
 
     self.lower_hsv_w_bright = np.array([0, 0, 191])
     self.upper_hsv_w_bright = np.array([0, 0, 206])
@@ -314,6 +325,20 @@ class image_converter:
         print("fast driving")
 
         self.vel_pub.publish(move)
+      elif(self.carwatching):
+        carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+        car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
+        car = car_raw // 255
+
+        car =  car[int(car.shape[0]):car.shape[0],int(car.shape[1]*0.4):int(car.shape[1])]
+
+        if(np.sum(car) > 10000):
+          while(np.sum(car) > 10000):
+            move.linear.x = 0
+            move.angular.z = 0
+            self.vel_pub.publish(move)
+          
+        self.carwatching = False
 
       #'''
       else:
@@ -321,7 +346,7 @@ class image_converter:
         gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         img_raw= cv2.inRange(hsv, self.lower_hsv_b, self.upper_hsv_b) 
-        img = img_raw //255
+        img = img_raw // 255
 
         #road is lighter than the backdrop, maybe try thresholding between 50-100
         #then taking the different between them
@@ -496,6 +521,8 @@ class image_converter:
         now = rospy.get_rostime().secs
         while(rospy.get_rostime().secs - now < 3):
           print("Left turn")
+
+        self.carwatching = True
 
         self.lookforintersections = False
 
