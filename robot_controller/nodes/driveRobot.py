@@ -485,7 +485,7 @@ class image_converter:
       print(np.sum(diswhiteline_image))
 
       if(np.sum(diswhiteline_image) < 1000):
-        self.basespeedhigher = 0.09
+        self.basespeedhigher = 0.13
         self.basespeedlower = 0.09
 
         move.linear.x = 0.2
