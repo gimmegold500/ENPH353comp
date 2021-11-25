@@ -43,7 +43,7 @@ class image_converter:
 
     self.flag = True
 
-    self.startingdrive = True #False
+    self.startingdrive = True #False 
     self.pedoseen = 0
 
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
@@ -56,7 +56,7 @@ class image_converter:
 
     self.turnleft = 0
     self.lookforintersections = False
-    self.carwatching = False
+    self.carwatching = 0
 
     time.sleep(1)
 
@@ -325,7 +325,7 @@ class image_converter:
         print("fast driving")
 
         self.vel_pub.publish(move)
-      elif(self.carwatching):
+      elif(self.carwatching > 0):
         carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
         car = car_raw // 255
@@ -333,12 +333,14 @@ class image_converter:
         car =  car[int(car.shape[0]):car.shape[0],int(car.shape[1]*0.4):int(car.shape[1])]
 
         if(np.sum(car) > 10000):
+
           while(np.sum(car) > 10000):
+            print("STOPPING DUE TO GRAY CAR")
             move.linear.x = 0
             move.angular.z = 0
             self.vel_pub.publish(move)
           
-        self.carwatching = False
+        self.carwatching -= 1
 
       #'''
       else:
@@ -522,7 +524,7 @@ class image_converter:
         while(rospy.get_rostime().secs - now < 3):
           print("Left turn")
 
-        self.carwatching = True
+        self.carwatching = 10
 
         self.lookforintersections = False
 
