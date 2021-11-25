@@ -516,12 +516,12 @@ class image_converter:
         self.basespeedlower = 0.09
 
         move.linear.x = 0.2
-        move.angular.z = 1.0
+        move.angular.z = 0.9
 
         #THIS IS TO START DRIVING
         self.vel_pub.publish(move)
         now = rospy.get_rostime().secs
-        while(rospy.get_rostime().secs - now < 3):
+        while(rospy.get_rostime().secs - now < 2):
           print("Left turn")
 
         self.carwatching = 10
