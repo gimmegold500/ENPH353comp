@@ -509,9 +509,9 @@ class image_converter:
           #process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
 
           print("light TRUE")
+          self.firstsawthecar = rospy.get_rostime().secs
           self.turnleft = 0
           self.lookforintersections = True
-          self.firstsawthecar = rospy.get_rostime().secs
 
     #After seeing last car starts looking for Intersections
     if(self.lookforintersections and (rospy.get_rostime().secs - self.firstsawthecar) > 3 ):
