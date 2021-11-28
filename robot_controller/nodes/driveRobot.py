@@ -140,6 +140,19 @@ class image_converter:
 
     move = Twist()
 
+
+    #This is for stopping the timer
+    # CHANGE THIS TO 4 min (240) BEFORE COMPETITION!!!!
+    if(currenttime-self.intialtime >= 100):
+      if(self.flag):
+        self.time_pub.publish("Bestie,Bestie,-1,XR58")
+        self.flag = False
+      #print("THIS SHOULD NOW STOP THE TIMER")
+      while(True):
+        move.linear.x = 0
+        move.angular.z = 0
+        self.vel_pub.publish(move)
+
     if(self.startingdrive):
       move.linear.x = 0.22
       move.angular.z = 1.3
@@ -162,16 +175,6 @@ class image_converter:
     #cv2.waitKey(3)
 
   
-    #This is for stopping the timer
-    # CHANGE THIS TO 4 min (240) BEFORE COMPETITION!!!!
-    if(currenttime-self.intialtime >= 240):
-      if(self.flag):
-        self.time_pub.publish("Bestie,Bestie,-1,XR58")
-        self.flag = False
-      #print("THIS SHOULD NOW STOP THE TIMER")
-      move.linear.x = 0
-      move.angular.z = 0
-      self.vel_pub.publish(move)
 
 
     #Pedestrian stuff here
@@ -240,11 +243,11 @@ class image_converter:
         print("Pedo moving with:")
         print(np.sum(difference_raw))
 
-      cv2.imshow("difference", difference_raw)
-      cv2.waitKey(2)
+      #cv2.imshow("difference", difference_raw)
+      #cv2.waitKey(2)
 
-      cv2.imshow("White", white_raw)
-      cv2.waitKey(2)
+      #cv2.imshow("White", white_raw)
+      #cv2.waitKey(2)
 
       #cv2.imshow("Red", red_raw)
       #cv2.waitKey(2)
@@ -284,11 +287,11 @@ class image_converter:
         car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
         car_image = car_raw // 255
 
-        car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0):int(car_image.shape[1]*1.0)]
-        car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0):int(car_raw.shape[1]*1.0)]
+        car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0):int(car_image.shape[1]*0.6)]
+        car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0):int(car_raw.shape[1]*0.6)]
 
-        #cv2.imshow("car", car_raw)
-        #cv2.waitKey(2)
+        cv2.imshow("looking for grey car", car_raw)
+        cv2.waitKey(2)
 
         print("seeing if car_image closeby")
         print(np.sum(car_image))
@@ -533,8 +536,8 @@ class image_converter:
         diswhiteline_raw.shape[1]*0.2):int(diswhiteline_raw.shape[1]*0.4)]
 
 
-      cv2.imshow("looking for white line", diswhiteline_raw)
-      cv2.waitKey(2)
+      #cv2.imshow("looking for white line", diswhiteline_raw)
+      #cv2.waitKey(2)
 
       print(np.sum(diswhiteline_image))
 
