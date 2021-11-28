@@ -43,7 +43,7 @@ class image_converter:
 
     self.flag = True
 
-    self.startingdrive = False #True 
+    self.startingdrive = True # edit here to start the way you want to 
     self.pedoseen = 0
 
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
@@ -57,6 +57,7 @@ class image_converter:
     self.turnleft = 0
     self.lookforintersections = False
     self.carwatching = 0
+    self.stopduetograycar = 0
 
     time.sleep(1)
 
@@ -325,37 +326,11 @@ class image_converter:
         print("fast driving")
 
         self.vel_pub.publish(move)
-      elif(self.carwatching > 0 and self.carwatching != 10):
-        
-        carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-        car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
-        car_image = car_raw // 255
-
-        car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0.4):int(car_image.shape[1])]
-        car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0.4):int(car_raw.shape[1])]
-
-        cv2.imshow("car", car_raw)
-        cv2.waitKey(2)
-
-        print("seeing if car_image closeby")
-        print(np.sum(car_image))
-
-        if(np.sum(car_image) > 10000):
-
-          while(np.sum(car_image) > 10000):
-            print(np.sum(car_image))
-            print("STOPPING DUE TO GRAY CAR")
-            move.linear.x = 0
-            move.angular.z = 0
-            self.vel_pub.publish(move)
-          
-        self.carwatching -= 1
-
-      #'''
       else:
-
+        '''
         if(self.carwatching == 10):
           self.carwatching -= 1
+        '''
 
         gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
@@ -450,11 +425,10 @@ class image_converter:
 
         #THIS IS REQUIRED FOR DRIVING
         self.vel_pub.publish(move)
-    #''' 
       
   
 
-    
+    #After last red line, starts looking for last Car
     if(self.turnleft > 25):
       print("turnleft:")
       print(self.turnleft)
@@ -498,6 +472,7 @@ class image_converter:
           self.lookforintersections = True
           self.firstsawthecar = rospy.get_rostime().secs
 
+    #After seeing last car starts looking for Intersections
     if(self.lookforintersections and (rospy.get_rostime().secs - self.firstsawthecar) > 3 ):
 
       WhiteThresholdLower = np.array([0,0,254])
@@ -525,6 +500,45 @@ class image_converter:
       if(np.sum(diswhiteline_image) < 1000):
         self.basespeedhigher = 0.15
         self.basespeedlower = 0.10
+          
+        #self.carwatching -= 1
+
+                
+        carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+        car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
+        car_image = car_raw // 255
+
+        car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0):int(car_image.shape[1]*0.25)]
+        car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0):int(car_raw.shape[1]*0.25)]
+
+        cv2.imshow("car", car_raw)
+        cv2.waitKey(2)
+
+        print("seeing if car_image closeby")
+        print(np.sum(car_image))
+
+        
+        move.linear.x = 0
+        move.angular.z = 0
+        self.vel_pub.publish(move)
+        
+
+        if(np.sum(car_image) > 50000):
+
+          while(np.sum(car_image) > 50000 or self.stopduetograycar > 0):
+            cv2.imshow("car", car_raw)
+            cv2.waitKey(2)
+            print(np.sum(car_image))
+            print("STOPPING DUE TO GRAY CAR")
+            if(np.sum(car_image) > 50000):
+              self.stopduetograycar = 5
+            if(self.stopduetograycar > 0):
+              self.stopduetograycar -= 1
+            
+            #move.linear.x = 0
+            #move.angular.z = 0
+            #self.vel_pub.publish(move)
+            
 
         move.linear.x = 0.2
         move.angular.z = 0.9
@@ -532,10 +546,10 @@ class image_converter:
         #THIS IS TO START DRIVING
         self.vel_pub.publish(move)
         now = rospy.get_rostime().secs
-        while(rospy.get_rostime().secs - now < 2):
+        while(rospy.get_rostime().secs - now < 3):
           print("Left turn")
 
-        self.carwatching = 10
+        #self.carwatching = 10
 
         self.lookforintersections = False
 
@@ -547,9 +561,11 @@ class image_converter:
 
 
     #Remove this when done
+    '''
     if(self.count == 10):
       print("SWITCH STATEMENT")
       self.carwatching = 10
+    '''
 
     previous_image = willBePast
 
@@ -587,3 +603,48 @@ if __name__ == '__main__':
 video.release()
 out.release()
 '''
+
+
+'''
+elif(self.carwatching > 0 
+#and self.carwatching != 10
+):
+  
+  carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+  car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
+  car_image = car_raw // 255
+
+  car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0.4):int(car_image.shape[1])]
+  car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0.4):int(car_raw.shape[1])]
+
+  cv2.imshow("car", car_raw)
+  cv2.waitKey(2)
+
+  print("seeing if car_image closeby")
+  print(np.sum(car_image))
+
+  
+  move.linear.x = 0
+  move.angular.z = 0
+  self.vel_pub.publish(move)
+  
+
+  if(np.sum(car_image) > 50000):
+
+    while(np.sum(car_image) > 50000):
+      cv2.imshow("car", car_raw)
+      cv2.waitKey(2)
+      print(np.sum(car_image))
+      print("STOPPING DUE TO GRAY CAR")
+      self.carwatching = 10
+      
+      #move.linear.x = 0
+      #move.angular.z = 0
+      #self.vel_pub.publish(move)
+      
+    
+  self.carwatching -= 1
+
+'''
+
+      
