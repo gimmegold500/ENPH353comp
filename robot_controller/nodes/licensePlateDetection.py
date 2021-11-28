@@ -55,9 +55,15 @@ class license_plate_detector:
         self.upper_hsv_plate3 = np.array([135, 41, 180])
 
         self.imNum = 6735
-        backend.clear_session()
+
+
+        self.sess = tf.Session()
         self.graph = tf.get_default_graph()
+
+        backend.set_session(self.sess)
         self.conv_model_parking_spot = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking_spot_model')
+        self.conv_model_letters = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters_model')
+        self.conv_model_numbers = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers_model')
 
         # with open('~/ros_ws/src/enph353/enph353_gazebo/scripts/plates.csv') as csvfile:
         #     reader = csv.reader(csvfile)
@@ -72,7 +78,7 @@ class license_plate_detector:
         # csvfile.close()
     
     def callback(self, data):
-        time.sleep(0.2)
+        time.sleep(0.1)
         
         img = self.bridge.imgmsg_to_cv2(data, "bgr8")
         height = img.shape[0]
@@ -177,17 +183,9 @@ def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
 
 def savePlate(self, plate):
     parkingSpot = plate[66 : 130, 50 :]
-    parkingSpot_aug = np.expand_dims(parkingSpot, axis = 0)
         
     cv2.imshow("parking", parkingSpot)
     cv2.waitKey(2)
-
-    with self.graph.as_default():
-        prediction = self.conv_model_parking_spot.predict(parkingSpot_aug)[0]
-
-    print(np.amax(prediction))
-    print(np.argmax(prediction))
-    time.sleep(0.5)
 
     actual_plate = plate[140 : 175, :]
     letters = actual_plate[ : , 5 : 42]
@@ -210,6 +208,26 @@ def savePlate(self, plate):
         
     cv2.imshow("numberTwo", numberTwo)
     cv2.waitKey(2)
+
+    with self.graph.as_default():
+        parkingSpot_aug = np.expand_dims(parkingSpot, axis = 0)
+        letterOne_aug = np.expand_dims(letterOne, axis = 0)
+        letterTwo_aug = np.expand_dims(letterTwo, axis = 0)
+        numberOne_aug = np.expand_dims(numberOne, axis = 0)
+        numberTwo_aug = np.expand_dims(numberTwo, axis = 0)
+
+        backend.set_session(self.sess)
+
+        ps_pred = self.conv_model_parking_spot.predict(parkingSpot_aug)[0]
+        prediction_ps = np.argmax(self.conv_model_parking_spot.predict(parkingSpot_aug)[0])
+        prediction_l1 = chr(np.argmax(self.conv_model_letters.predict(letterOne_aug)[0]) + 65)
+        prediction_l2 = chr(np.argmax(self.conv_model_letters.predict(letterTwo_aug)[0]) + 65)
+        prediction_n1 = np.argmax(self.conv_model_numbers.predict(numberOne_aug)[0])
+        prediction_n2 = np.argmax(self.conv_model_numbers.predict(numberTwo_aug)[0])
+
+        print(ps_pred)
+        print("Prediction = %d"%(prediction_ps + 1))
+        print("Prediction = %s %s %d %d"%(prediction_l1, prediction_l2, prediction_n1, prediction_n2))
 
     # userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
