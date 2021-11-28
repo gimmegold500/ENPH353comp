@@ -213,18 +213,18 @@ class image_converter:
       white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(
         white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
       current_pedo_image = current_pedo_image[int(current_pedo_image.shape[0]*0.5):int(
-        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.3):int(current_pedo_image.shape[1]*0.6)]
+        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.25):int(current_pedo_image.shape[1]*0.6)]
       past_pedo_image = past_pedo_image[int(past_pedo_image.shape[0]*0.5):int(
-        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.3):int(past_pedo_image.shape[1]*0.6)]
+        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.25):int(past_pedo_image.shape[1]*0.6)]
      
       red_raw = red_raw[int(red_raw.shape[0]*0.4):int(red_raw.shape[0]*0.6),int(
         red_raw.shape[1]*0.4):int(red_raw.shape[1]*0.6)]
       white_raw = white_raw[int(white_raw.shape[0]*0.5):int(white_raw.shape[0]*0.8),int(
         white_raw.shape[1]*0.45):int(white_raw.shape[1]*0.55)]
       pedo_raw = pedo_raw[int(pedo_raw.shape[0]*0.5):int(
-        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.3):int(pedo_raw.shape[1]*0.6)]
+        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.25):int(pedo_raw.shape[1]*0.6)]
       past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.5):int(
-        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.3):int(past_for_pedo_raw.shape[1]*0.6)]
+        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.25):int(past_for_pedo_raw.shape[1]*0.6)]
 
       difference_image = current_pedo_image - past_pedo_image
       difference_raw = pedo_raw - past_for_pedo_raw
