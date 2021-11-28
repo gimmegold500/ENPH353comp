@@ -10,6 +10,15 @@ import csv
 
 import numpy as np
 
+from tensorflow.keras import layers
+from tensorflow.keras import models
+from tensorflow.keras import optimizers
+
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras import backend
+
+import tensorflow as tf
+
 class license_plate_detector:
 
     def __init__(self):
@@ -45,7 +54,10 @@ class license_plate_detector:
         self.lower_hsv_plate3 = np.array([103, 0, 80])
         self.upper_hsv_plate3 = np.array([135, 41, 180])
 
-        self.imNum = 0
+        self.imNum = 6735
+        backend.clear_session()
+        self.graph = tf.get_default_graph()
+        self.conv_model_parking_spot = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking_spot_model')
 
         # with open('~/ros_ws/src/enph353/enph353_gazebo/scripts/plates.csv') as csvfile:
         #     reader = csv.reader(csvfile)
@@ -58,9 +70,6 @@ class license_plate_detector:
         #     print(rows)
         
         # csvfile.close()
-
-        self.letters = [['M', 'B'], ['S', 'S'], ['M', 'Y'], ['N', 'J'], ['T', 'N'], ['O', 'R'], ['W', 'P'], ['L', 'Z']]
-        self.numbers = [[3, 1], [3, 7], [0, 4], [2, 9], [1, 3], [4, 7], [7, 1], [7, 1]]
     
     def callback(self, data):
         time.sleep(0.2)
@@ -81,7 +90,7 @@ class license_plate_detector:
 
         # erode and dilate images
         kernel_3 = np.ones((3, 3), np.uint8)
-        kernel_5 = np.ones((5, 5), np.uint8)
+        kernel_5 = np.ones((7, 7), np.uint8)
 
         # slice images in half
         mask_white_dark = cleanImage(mask_white_dark, kernel_5)
@@ -121,8 +130,7 @@ class license_plate_detector:
             process_car(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r, img[:, 0:width//2], kernel_3)
 
 def car_is_spotted(self, blue_vals, white_vals, grey_vals):
-    print(np.sum(grey_vals))
-    return np.sum(blue_vals) > 25000 and np.sum(blue_vals) < 37500 and np.sum(white_vals) > 500
+    return np.sum(blue_vals) > 22500 and np.sum(blue_vals) < 40000 and np.sum(white_vals) > 500
 
 def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
     print("CAR!")
@@ -169,9 +177,17 @@ def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
 
 def savePlate(self, plate):
     parkingSpot = plate[66 : 130, 50 :]
+    parkingSpot_aug = np.expand_dims(parkingSpot, axis = 0)
         
     cv2.imshow("parking", parkingSpot)
     cv2.waitKey(2)
+
+    with self.graph.as_default():
+        prediction = self.conv_model_parking_spot.predict(parkingSpot_aug)[0]
+
+    print(np.amax(prediction))
+    print(np.argmax(prediction))
+    time.sleep(0.5)
 
     actual_plate = plate[140 : 175, :]
     letters = actual_plate[ : , 5 : 42]
@@ -195,24 +211,19 @@ def savePlate(self, plate):
     cv2.imshow("numberTwo", numberTwo)
     cv2.waitKey(2)
 
-    userInput = int(input("Put in plate # or 0 if you would like to skip"))
+    # userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
-    if userInput >= 1 and userInput <= 8:
-        print(np.shape(letterOne))
-        print(np.shape(letterTwo))
-        print(np.shape(numberOne))
-        print(np.shape(numberTwo))
-        print(np.shape(parkingSpot))
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/' + str(letters[userInput][0]) + '-' +  str(self.imNum) + '.png', letterOne)
-        self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/' + str(letters[userInput][1]) + '-' +  str(self.imNum) + '.png', letterTwo)
-        self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/' + str(numbers[userInput][0]) + '-' +  str(self.imNum) + '.png', numberOne)
-        self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/' + str(numbers[userInput][1]) + '-' +  str(self.imNum) + '.png', numberTwo)
-        self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
-        self.imNum += 1
+    # if userInput >= 1 and userInput <= 8:
+    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/Z-' +  str(self.imNum) + '.png', letterOne)
+    #     self.imNum += 1
+    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/Z-' +  str(self.imNum) + '.png', letterTwo)
+    #     self.imNum += 1
+    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/8-' +  str(self.imNum) + '.png', numberOne)
+    #     self.imNum += 1
+    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/8-' +  str(self.imNum) + '.png', numberTwo)
+    #     self.imNum += 1
+    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
+    #     self.imNum += 1
 
 def cleanImage(image, kernel):
     image = cv2.erode(image, kernel, iterations=1)
@@ -240,7 +251,6 @@ def order_points(pts):
     # return the ordered coordinates
 
     rect = np.array(rect)
-    print(rect)
     return rect
 
 def get_list_contours(contours):
