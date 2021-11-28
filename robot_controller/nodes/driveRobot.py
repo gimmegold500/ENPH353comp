@@ -139,19 +139,20 @@ class image_converter:
     #print("Looping")
 
     move = Twist()
-
-
     #This is for stopping the timer
     # CHANGE THIS TO 4 min (240) BEFORE COMPETITION!!!!
-    if(currenttime-self.intialtime >= 100):
+    if(currenttime-self.intialtime >= 240):
       if(self.flag):
         self.time_pub.publish("Bestie,Bestie,-1,XR58")
         self.flag = False
-      #print("THIS SHOULD NOW STOP THE TIMER")
+      print("End of competition")
       while(True):
         move.linear.x = 0
         move.angular.z = 0
         self.vel_pub.publish(move)
+
+
+
 
     if(self.startingdrive):
       move.linear.x = 0.22
@@ -283,12 +284,13 @@ class image_converter:
         self.vel_pub.publish(move)
         print("Should Be Stopped!!!")
       elif(self.stopduetograycar > 0 ):
+        print("entered gray car status")
         carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
         car_image = car_raw // 255
 
-        car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0):int(car_image.shape[1]*0.6)]
-        car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0):int(car_raw.shape[1]*0.6)]
+        car_image =  car_image[int(car_image.shape[0]*0.4):int(car_image.shape[0]*0.6),int(car_image.shape[1]*0.3):int(car_image.shape[1]*0.7)]
+        car_raw =  car_raw[int(car_raw.shape[0]*0.4):int(car_raw.shape[0]*0.6),int(car_raw.shape[1]*0.3):int(car_raw.shape[1]*0.7)]
 
         cv2.imshow("looking for grey car", car_raw)
         cv2.waitKey(2)
@@ -302,7 +304,7 @@ class image_converter:
         #self.vel_pub.publish(move)
         print("STOPPING DUE TO GRAY CAR WATCHING")
 
-        if(np.sum(car_image) > 50000):
+        if(np.sum(car_image) > 2000):
           #cv2.imshow("car", car_raw)
           #cv2.waitKey(2)
           #print(np.sum(car_image))
@@ -319,7 +321,7 @@ class image_converter:
           self.vel_pub.publish(move)
           now = rospy.get_rostime().secs
           while(rospy.get_rostime().secs - now < 1):
-            print("Left turn")
+            print("2nd left")
 
         if(self.stopduetograycar > 0):
           self.stopduetograycar -= 1
@@ -562,6 +564,7 @@ class image_converter:
         self.vel_pub.publish(move)
 
         self.stopduetograycar = 10
+        print("stopdue to gray car set to 10")
 
         self.lookforintersections = False
 
