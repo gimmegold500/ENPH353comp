@@ -161,7 +161,6 @@ class image_converter:
     #cv2.imshow("Image window", cv_image)
     #cv2.waitKey(3)
 
-
   
     #This is for stopping the timer
     # CHANGE THIS TO 4 min (240) BEFORE COMPETITION!!!!
@@ -187,7 +186,7 @@ class image_converter:
     PedoThresholdLower = np.array([100,0,43])
     PedoThresholdHigher = np.array([117, 255, 76])
 
-
+    #driving stuff here, indexed at 1 to have a past image work for pedestrian crossing
     if(self.count > 1):
  
       currenthsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
@@ -261,7 +260,7 @@ class image_converter:
       if(self.redcounterdriving > 0):
         self.redcounterdriving -= 1
 
-    
+      #driving code here as well as pedestrian stuff
       if((self.redcounter > 0 
             and (np.sum(white_image) > 2000) 
             #and (np.sum(current_pedo_image - past_pedo_image) > 150) 
@@ -280,6 +279,48 @@ class image_converter:
         move.angular.z = 0
         self.vel_pub.publish(move)
         print("Should Be Stopped!!!")
+      elif(self.stopduetograycar > 0 ):
+        carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+        car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
+        car_image = car_raw // 255
+
+        car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0):int(car_image.shape[1]*1.0)]
+        car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0):int(car_raw.shape[1]*1.0)]
+
+        #cv2.imshow("car", car_raw)
+        #cv2.waitKey(2)
+
+        print("seeing if car_image closeby")
+        print(np.sum(car_image))
+
+        #move.linear.x = 0
+        #move.angular.z = 0
+        #self.vel_pub.publish(move)
+        print("STOPPING DUE TO GRAY CAR WATCHING")
+
+        if(np.sum(car_image) > 50000):
+          #cv2.imshow("car", car_raw)
+          #cv2.waitKey(2)
+          #print(np.sum(car_image))
+          print("STOPPING DUE TO GRAY CAR")
+          self.stopduetograycar = 10
+        
+        #self.carwatching = 10
+
+        if(self.stopduetograycar == 1):
+          move.linear.x = 0.2
+          move.angular.z = 0.9
+
+          #THIS IS TO START DRIVING
+          self.vel_pub.publish(move)
+          now = rospy.get_rostime().secs
+          while(rospy.get_rostime().secs - now < 1):
+            print("Left turn")
+
+        if(self.stopduetograycar > 0):
+          self.stopduetograycar -= 1
+
+
       elif(self.redcounterdriving > 0 and (self.whitecounter) > 0):
         self.turnleft += 1
 
@@ -327,10 +368,10 @@ class image_converter:
 
         self.vel_pub.publish(move)
       else:
-        '''
-        if(self.carwatching == 10):
-          self.carwatching -= 1
-        '''
+        
+        #if(self.carwatching == 10):
+          #self.carwatching -= 1
+        
 
         gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
@@ -503,62 +544,27 @@ class image_converter:
           
         #self.carwatching -= 1
 
-                
-        carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-        car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
-        car_image = car_raw // 255
-
-        car_image =  car_image[0:car_image.shape[0],int(car_image.shape[1]*0):int(car_image.shape[1]*0.25)]
-        car_raw =  car_raw[0:car_raw.shape[0],int(car_raw.shape[1]*0):int(car_raw.shape[1]*0.25)]
-
-        cv2.imshow("car", car_raw)
-        cv2.waitKey(2)
-
-        print("seeing if car_image closeby")
-        print(np.sum(car_image))
-
-        
-        move.linear.x = 0
-        move.angular.z = 0
-        self.vel_pub.publish(move)
-        
-
-        if(np.sum(car_image) > 50000):
-
-          while(np.sum(car_image) > 50000 or self.stopduetograycar > 0):
-            cv2.imshow("car", car_raw)
-            cv2.waitKey(2)
-            print(np.sum(car_image))
-            print("STOPPING DUE TO GRAY CAR")
-            if(np.sum(car_image) > 50000):
-              self.stopduetograycar = 5
-            if(self.stopduetograycar > 0):
-              self.stopduetograycar -= 1
-            
-            #move.linear.x = 0
-            #move.angular.z = 0
-            #self.vel_pub.publish(move)
-            
-
         move.linear.x = 0.2
         move.angular.z = 0.9
 
         #THIS IS TO START DRIVING
         self.vel_pub.publish(move)
         now = rospy.get_rostime().secs
-        while(rospy.get_rostime().secs - now < 3):
+        while(rospy.get_rostime().secs - now < 2):
           print("Left turn")
 
-        #self.carwatching = 10
+        move.linear.x = 0
+        move.angular.z = 0
+        self.vel_pub.publish(move)
+
+        self.stopduetograycar = 10
 
         self.lookforintersections = False
 
-      
 
-    
 
     self.count += 1
-
+    
 
     #Remove this when done
     '''
