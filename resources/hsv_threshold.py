@@ -4,6 +4,7 @@ import numpy as np
 import cv2 as cv
 import time
 
+
 try:
     cv.imread(sys.argv[1], cv.IMREAD_COLOR)
 except:
@@ -15,8 +16,10 @@ img = cv.medianBlur(img,5)
 # Convert BGR to HSV
 hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
+
 uh, us, uv = 135, 41, 180
 lh, ls, lv = 103, 0, 80
+
 lower_hsv = np.array([lh,ls,lv])
 upper_hsv = np.array([uh,us,uv])
 
