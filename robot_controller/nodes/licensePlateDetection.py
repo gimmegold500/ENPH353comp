@@ -59,7 +59,7 @@ class license_plate_detector:
         self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
 
 
-        self.imNum = 6735
+        self.imNum = 6830
 
 
         self.sess = tf.Session()
@@ -252,19 +252,19 @@ def savePlate(self, plate):
             self.licenses_found[prediction_ps] = 1
             self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + license_prediction))
 
-    # userInput = int(input("Put in plate # or 0 if you would like to skip"))
+    userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
-    # if userInput >= 1 and userInput <= 8:
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/Z-' +  str(self.imNum) + '.png', letterOne)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/Z-' +  str(self.imNum) + '.png', letterTwo)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/8-' +  str(self.imNum) + '.png', numberOne)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/8-' +  str(self.imNum) + '.png', numberTwo)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
-    #     self.imNum += 1
+    if userInput >= 1 and userInput <= 8:
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/A-' +  str(self.imNum) + '.png', letterOne)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/A-' +  str(self.imNum) + '.png', letterTwo)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/3-' +  str(self.imNum) + '.png', numberOne)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/3-' +  str(self.imNum) + '.png', numberTwo)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
+        self.imNum += 1
 
 def is_garbage(self, plate):
     points = 0
