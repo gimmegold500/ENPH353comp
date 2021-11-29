@@ -61,7 +61,7 @@ class license_plate_detector:
         self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
 
 
-        self.imNum = 7595
+        self.imNum = 12545
 
 
         self.sess = tf.Session()
@@ -258,14 +258,14 @@ def savePlate(self, plate):
     userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
     if userInput >= 1 and userInput <= 8:
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/D-' +  str(self.imNum) + '.png', letterOne)
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/U-' +  str(self.imNum) + '.png', letterOne)
         self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/D-' +  str(self.imNum) + '.png', letterTwo)
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/U-' +  str(self.imNum) + '.png', letterTwo)
         self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/6-' +  str(self.imNum) + '.png', numberOne)
-        self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/6-' +  str(self.imNum) + '.png', numberTwo)
-        self.imNum += 1
+        # cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/1-' +  str(self.imNum) + '.png', numberOne)
+        # self.imNum += 1
+        # cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/1-' +  str(self.imNum) + '.png', numberTwo)
+        # self.imNum += 1
         cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
         self.imNum += 1
 

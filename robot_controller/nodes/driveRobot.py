@@ -479,7 +479,7 @@ class image_converter:
   
 
     #After last red line, starts looking for last Car
-    if(self.turnleft > 25):
+    if(self.turnleft > 70):
       #print("turnleft:")
       #print(self.turnleft)
 
