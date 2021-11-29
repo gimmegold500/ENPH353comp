@@ -233,17 +233,19 @@ class image_converter:
       
       
       if((np.sum(white_image) > 1500)):
-        print("White val:")
-        print(np.sum(white_image))
+        #print("White val:")
+        #print(np.sum(white_image))
         self.whitecounter = 15
 
       if(self.whitecounter > 0):
         self.whitecounter -= 1
       
+      '''
       if(np.sum(difference_raw > 10000)):
         
         print("Pedo moving with:")
         print(np.sum(difference_raw))
+      '''
 
       #cv2.imshow("difference", difference_raw)
       #cv2.waitKey(2)
@@ -260,7 +262,7 @@ class image_converter:
 
       if(self.redcounter > 0 and self.pedoseen == 0):
         self.redcounter -= 1
-        print("Red stop")
+        #print("Red stop")
 
       if(self.redcounterdriving > 0):
         self.redcounterdriving -= 1
@@ -276,16 +278,16 @@ class image_converter:
         else:
           self.pedoseen -= 1
         
-        print("difference: ")
-        print(np.sum(difference_raw))
-        print("pedo seen: ")
-        print(self.pedoseen)
+        #print("difference: ")
+        #print(np.sum(difference_raw))
+        #print("pedo seen: ")
+        #print(self.pedoseen)
         move.linear.x = 0
         move.angular.z = 0
         self.vel_pub.publish(move)
-        print("Should Be Stopped!!!")
+        #print("Should Be Stopped!!!")
       elif(self.stopduetograycar > 0 ):
-        print("entered gray car status")
+        #print("entered gray car status")
         carphoto = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         car_raw= cv2.inRange(carphoto, self.lower_hsv_car, self.upper_hsv_car)
         car_image = car_raw // 255
@@ -293,23 +295,23 @@ class image_converter:
         car_image =  car_image[int(car_image.shape[0]*0.4):int(car_image.shape[0]*0.6),int(car_image.shape[1]*0.3):int(car_image.shape[1]*0.7)]
         car_raw =  car_raw[int(car_raw.shape[0]*0.4):int(car_raw.shape[0]*0.6),int(car_raw.shape[1]*0.3):int(car_raw.shape[1]*0.7)]
 
-        cv2.imshow("looking for grey car", car_raw)
-        cv2.waitKey(2)
+        #cv2.imshow("looking for grey car", car_raw)
+        #cv2.waitKey(2)
 
-        print("seeing if car_image closeby")
-        print(np.sum(car_image))
-        print(self.stopduetograycar)
+        #print("seeing if car_image closeby")
+        #print(np.sum(car_image))
+        #print(self.stopduetograycar)
 
         #move.linear.x = 0
         #move.angular.z = 0
         #self.vel_pub.publish(move)
-        print("STOPPING DUE TO GRAY CAR WATCHING")
+        #print("STOPPING DUE TO GRAY CAR WATCHING")
 
         if(np.sum(car_image) > 2000):
           #cv2.imshow("car", car_raw)
           #cv2.waitKey(2)
           #print(np.sum(car_image))
-          print("STOPPING DUE TO GRAY CAR")
+          #print("STOPPING DUE TO GRAY CAR")
           self.stopduetograycar = 10
         
         #self.carwatching = 10
@@ -366,12 +368,12 @@ class image_converter:
         cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
         #for Testing
-        print(cX)
+        #print(cX)
 
         move.linear.x = 0.45
         move.angular.z = -1*cX
 
-        print("fast driving")
+        #print("fast driving")
 
         self.vel_pub.publish(move)
       else:
@@ -458,7 +460,7 @@ class image_converter:
         cX = 1*(cX - img.shape[1]*0.5)/VelWeight
 
         #for Testing
-        print(cX)
+        #print(cX)
 
 
 
@@ -478,8 +480,8 @@ class image_converter:
 
     #After last red line, starts looking for last Car
     if(self.turnleft > 25):
-      print("turnleft:")
-      print(self.turnleft)
+      #print("turnleft:")
+      #print(self.turnleft)
 
       imgforbluecar = self.bridge.imgmsg_to_cv2(data, "bgr8")
       height = imgforbluecar.shape[0]
@@ -543,7 +545,7 @@ class image_converter:
       #cv2.imshow("looking for white line", diswhiteline_raw)
       #cv2.waitKey(2)
 
-      print(np.sum(diswhiteline_image))
+      #print(np.sum(diswhiteline_image))
 
       if(np.sum(diswhiteline_image) < 1000):
         self.basespeedhigher = 0.15
@@ -565,7 +567,7 @@ class image_converter:
         self.vel_pub.publish(move)
 
         self.stopduetograycar = 10
-        print("stopdue to gray car set to 10")
+        #print("stopdue to gray car set to 10")
 
         self.lookforintersections = False
 

@@ -70,7 +70,7 @@ class license_plate_detector:
         self.conv_model_letters = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters_model')
         self.conv_model_numbers = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers_model')
 
-        self.license_pub.publish("TeamA,aileton,0,XR58")
+        #self.license_pub.publish("TeamA,aileton,0,XR58")
 
         # with open('~/ros_ws/src/enph353/enph353_gazebo/scripts/plates.csv') as csvfile:
         #     reader = csv.reader(csvfile)
@@ -205,8 +205,8 @@ def savePlate(self, plate):
     cv2.waitKey(2)
 
     actual_plate = plate[140 : 175, :]
-    letters = actual_plate[ : , 5 : 42]
-    numbers = actual_plate[ : , 58 : 95]
+    letters = actual_plate[ : , 3 : 40] # 5 42
+    numbers = actual_plate[ : , 56 : 93] # 58 95
 
     letterOne = letters[:, :18]
     letterTwo = letters[:, 18 : 36]
@@ -250,7 +250,7 @@ def savePlate(self, plate):
 
         if not (is_garbage(self, license_prediction)):
             self.licenses_found[prediction_ps] = 1
-            self.license_pub.publish(str('TeamA,aileton,' + str(prediction_ps + 1) + ',' + license_prediction))
+            self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + license_prediction))
 
     # userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
