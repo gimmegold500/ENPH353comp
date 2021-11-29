@@ -59,7 +59,7 @@ class license_plate_detector:
         self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
 
 
-        self.imNum = 6735
+        self.imNum = 6920
 
 
         self.sess = tf.Session()
@@ -130,19 +130,18 @@ class license_plate_detector:
         mask_plate_dark_r = mask_plate_dark[:,width // 2:]
 
         # process car if needed
-        if (np.sum(self.licenses_found) < 6):
-            if car_is_spotted(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l):
-                process_car(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l, img[:, 0:width//2], kernel_3)
-            
-            if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
-                process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
-        
-        else:
-            if car_is_spotted(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r):
-                process_car(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r, img[:, width//2:], kernel_3)
 
-            if car_is_spotted(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r):
-                process_car(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r, img[:, 0:width//2], kernel_3)
+        if car_is_spotted(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l):
+            process_car(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l, img[:, 0:width//2], kernel_3)
+        
+        if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
+            process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
+
+        if car_is_spotted(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r):
+            process_car(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r, img[:, width//2:], kernel_3)
+
+        if car_is_spotted(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r):
+            process_car(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r, img[:, 0:width//2], kernel_3)
 
 def car_is_spotted(self, blue_vals, white_vals, grey_vals):
     return np.sum(blue_vals) > 22500 and np.sum(blue_vals) < 40000 and np.sum(white_vals) > 500
@@ -252,19 +251,19 @@ def savePlate(self, plate):
             self.licenses_found[prediction_ps] = 1
             self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + license_prediction))
 
-    # userInput = int(input("Put in plate # or 0 if you would like to skip"))
+    userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
-    # if userInput >= 1 and userInput <= 8:
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/Z-' +  str(self.imNum) + '.png', letterOne)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/Z-' +  str(self.imNum) + '.png', letterTwo)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/8-' +  str(self.imNum) + '.png', numberOne)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/8-' +  str(self.imNum) + '.png', numberTwo)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
-    #     self.imNum += 1
+    if userInput >= 1 and userInput <= 8:
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/A-' +  str(self.imNum) + '.png', letterOne)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/A-' +  str(self.imNum) + '.png', letterTwo)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/3-' +  str(self.imNum) + '.png', numberOne)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/3-' +  str(self.imNum) + '.png', numberTwo)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
+        self.imNum += 1
 
 def is_garbage(self, plate):
     points = 0
