@@ -4,18 +4,22 @@ import numpy as np
 import cv2 as cv
 import time
 
-img = cv.imread('car_image.png',cv.IMREAD_COLOR)
+
+try:
+    cv.imread(sys.argv[1], cv.IMREAD_COLOR)
+except:
+    img = cv.imread('sampleCar_P3.png',cv.IMREAD_COLOR)
+    pass
+
 img = cv.medianBlur(img,5)
 
 # Convert BGR to HSV
 hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
-uh = 130
-us = 255
-uv = 255
-lh = 110
-ls = 50
-lv = 50
+
+uh, us, uv = 135, 41, 180
+lh, ls, lv = 103, 0, 80
+
 lower_hsv = np.array([lh,ls,lv])
 upper_hsv = np.array([uh,us,uv])
 

@@ -23,10 +23,12 @@ with open(path + "plates.csv", 'w') as plates_file:
         plate_alpha = ""
         for _ in range(0, 2):
             plate_alpha += (random.choice(string.ascii_uppercase))
+        #plate_alpha = "ZZ"
         num = randint(0, 99)
 
         # Pick two random numbers
         plate_num = "{:02d}".format(num)
+        #plate_num = "88"
 
         # Save plate to file
         csvwriter.writerow([plate_alpha+plate_num])

@@ -134,10 +134,11 @@ class image_converter:
 
 
   def callback(self,data):
+
     global previous_image
     currenttime = rospy.get_rostime().secs
     #print("Looping")
-
+    
     move = Twist()
     #This is for stopping the timer
     # CHANGE THIS TO 4 min (240) BEFORE COMPETITION!!!!
