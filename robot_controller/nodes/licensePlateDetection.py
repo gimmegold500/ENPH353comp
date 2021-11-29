@@ -55,11 +55,13 @@ class license_plate_detector:
         self.upper_hsv_plate_bright = np.array([155, 35, 184])
         self.lower_hsv_plate3 = np.array([103, 0, 80])
         self.upper_hsv_plate3 = np.array([135, 41, 180])
+        self.lower_hsv_plate7 = np.array([106, 5, 92])
+        self.upper_hsv_plate7 = np.array([131, 65, 122])
         
         self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
 
 
-        self.imNum = 6920
+        self.imNum = 7595
 
 
         self.sess = tf.Session()
@@ -100,6 +102,7 @@ class license_plate_detector:
         mask_plate_dark = cv2.inRange(hsv, self.lower_hsv_plate_dark, self.upper_hsv_plate_dark) // 255
         mask_plate_bright = cv2.inRange(hsv, self.lower_hsv_plate_bright, self.upper_hsv_plate_bright) // 255
         mask_plate_3 = cv2.inRange(hsv, self.lower_hsv_plate3, self.upper_hsv_plate3) // 255
+        mask_plate_7 = cv2.inRange(hsv, self.lower_hsv_plate7, self.upper_hsv_plate7) // 255
 
         # erode and dilate images
         kernel_3 = np.ones((3, 3), np.uint8)
@@ -111,6 +114,7 @@ class license_plate_detector:
         mask_plate_dark = cleanImage(mask_plate_dark, kernel_3)
         mask_plate_bright = cleanImage(mask_plate_bright, kernel_3)
         mask_plate_3 = cleanImage(mask_plate_3, kernel_3)
+        mask_plate_7 = cleanImage(mask_plate_7, kernel_3)
 
         mask_blue_l = mask_blue[:,0:width // 2]
 
@@ -126,8 +130,8 @@ class license_plate_detector:
 
         mask_white_bright_r = mask_white_bright[:,width // 2:]
         mask_white_dark_r = mask_white_dark[:,width // 2:]
-        mask_plate_bright_r = mask_plate_bright[:,width // 2:]
-        mask_plate_dark_r = mask_plate_dark[:,width // 2:]
+        mask_plate_bright_r = mask_plate_bright[:,width // 2:] + mask_plate_7[:, width//2:]
+        mask_plate_dark_r = mask_plate_dark[:,width // 2:] + mask_plate_7[:, width//2:]
 
         # process car if needed
 
@@ -254,13 +258,13 @@ def savePlate(self, plate):
     userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
     if userInput >= 1 and userInput <= 8:
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/A-' +  str(self.imNum) + '.png', letterOne)
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/D-' +  str(self.imNum) + '.png', letterOne)
         self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/A-' +  str(self.imNum) + '.png', letterTwo)
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/D-' +  str(self.imNum) + '.png', letterTwo)
         self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/3-' +  str(self.imNum) + '.png', numberOne)
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/6-' +  str(self.imNum) + '.png', numberOne)
         self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/3-' +  str(self.imNum) + '.png', numberTwo)
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/6-' +  str(self.imNum) + '.png', numberTwo)
         self.imNum += 1
         cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
         self.imNum += 1
