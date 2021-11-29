@@ -59,7 +59,7 @@ class license_plate_detector:
         self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
 
 
-        self.imNum = 6830
+        self.imNum = 6920
 
 
         self.sess = tf.Session()
@@ -130,19 +130,18 @@ class license_plate_detector:
         mask_plate_dark_r = mask_plate_dark[:,width // 2:]
 
         # process car if needed
-        if (np.sum(self.licenses_found) < 6):
-            if car_is_spotted(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l):
-                process_car(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l, img[:, 0:width//2], kernel_3)
-            
-            if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
-                process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
-        
-        else:
-            if car_is_spotted(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r):
-                process_car(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r, img[:, width//2:], kernel_3)
 
-            if car_is_spotted(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r):
-                process_car(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r, img[:, 0:width//2], kernel_3)
+        if car_is_spotted(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l):
+            process_car(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l, img[:, 0:width//2], kernel_3)
+        
+        if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
+            process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
+
+        if car_is_spotted(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r):
+            process_car(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r, img[:, width//2:], kernel_3)
+
+        if car_is_spotted(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r):
+            process_car(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r, img[:, 0:width//2], kernel_3)
 
 def car_is_spotted(self, blue_vals, white_vals, grey_vals):
     return np.sum(blue_vals) > 22500 and np.sum(blue_vals) < 40000 and np.sum(white_vals) > 500
