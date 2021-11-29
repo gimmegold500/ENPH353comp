@@ -162,8 +162,9 @@ class image_converter:
       #THIS IS TO START DRIVING
       self.vel_pub.publish(move)
       now = rospy.get_rostime().secs
-      while(rospy.get_rostime().secs - now < 1):
-        print("Starting turn")
+      #while(rospy.get_rostime().secs - now < 1):
+        #print("Starting turn")
+      time.sleep(0.5)
       
       self.startingdrive = False
   
@@ -323,8 +324,10 @@ class image_converter:
           #THIS IS TO START DRIVING
           self.vel_pub.publish(move)
           now = rospy.get_rostime().secs
-          while(rospy.get_rostime().secs - now < 1):
-            print("2nd left")
+          #while(rospy.get_rostime().secs - now < 1):
+            #print("2nd left")
+
+          time.sleep(1.5)
 
         if(self.stopduetograycar > 0):
           self.stopduetograycar -= 1
