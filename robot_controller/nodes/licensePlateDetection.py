@@ -16,6 +16,7 @@ from tensorflow.keras import optimizers
 
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras import backend
+from std_msgs.msg import String
 
 import tensorflow as tf
 
@@ -23,6 +24,7 @@ class license_plate_detector:
 
     def __init__(self):
         self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.callback)
+        self.license_pub = rospy.Publisher("/license_plate", String, queue_size=1)
         self.bridge = CvBridge()
 
         # blue
@@ -53,6 +55,9 @@ class license_plate_detector:
         self.upper_hsv_plate_bright = np.array([155, 35, 184])
         self.lower_hsv_plate3 = np.array([103, 0, 80])
         self.upper_hsv_plate3 = np.array([135, 41, 180])
+        
+        self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
+
 
         self.imNum = 6735
 
@@ -64,6 +69,8 @@ class license_plate_detector:
         self.conv_model_parking_spot = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking_spot_model')
         self.conv_model_letters = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters_model')
         self.conv_model_numbers = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers_model')
+
+        self.license_pub.publish("TeamA,aileton,0,XR58")
 
         # with open('~/ros_ws/src/enph353/enph353_gazebo/scripts/plates.csv') as csvfile:
         #     reader = csv.reader(csvfile)
@@ -123,17 +130,19 @@ class license_plate_detector:
         mask_plate_dark_r = mask_plate_dark[:,width // 2:]
 
         # process car if needed
-        if car_is_spotted(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l):
-            process_car(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l, img[:, 0:width//2], kernel_3)
+        if (np.sum(self.licenses_found) < 6):
+            if car_is_spotted(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l):
+                process_car(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l, img[:, 0:width//2], kernel_3)
+            
+            if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
+                process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
         
-        if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
-            process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
-        
-        if car_is_spotted(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r):
-            process_car(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r, img[:, width//2:], kernel_3)
+        else:
+            if car_is_spotted(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r):
+                process_car(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r, img[:, width//2:], kernel_3)
 
-        if car_is_spotted(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r):
-            process_car(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r, img[:, 0:width//2], kernel_3)
+            if car_is_spotted(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r):
+                process_car(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r, img[:, 0:width//2], kernel_3)
 
 def car_is_spotted(self, blue_vals, white_vals, grey_vals):
     return np.sum(blue_vals) > 22500 and np.sum(blue_vals) < 40000 and np.sum(white_vals) > 500
@@ -169,12 +178,20 @@ def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
     im2, contours, hierarchy = cv2.findContours(plate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     if (len(contours) > 0):
+        max_area = -1
+
+        for i in range(len(contours)):
+            area = cv2.contourArea(contours[i])
+            if area>max_area:
+                cnt = contours[i]
+                max_area = area
+
         contours = get_list_contours(contours)
         cv2.imshow("contours", og_img)
         cv2.waitKey(2)
 
-        new_contours = [order_points(contours).astype(int)]
-        new_plate = four_point_transform(self, og_img, contours)
+        # new_contours = [order_points(contours).astype(int)]
+        new_plate = four_point_transform(self, og_img, cnt)
         
         cv2.imshow("warped plate", new_plate)
         cv2.waitKey(2)
@@ -229,6 +246,12 @@ def savePlate(self, plate):
         print("Prediction = %d"%(prediction_ps + 1))
         print("Prediction = %s %s %d %d"%(prediction_l1, prediction_l2, prediction_n1, prediction_n2))
 
+        license_prediction = str(prediction_l1) + str(prediction_l2) + str(prediction_n1) + str(prediction_n2)
+
+        if not (is_garbage(self, license_prediction)):
+            self.licenses_found[prediction_ps] = 1
+            self.license_pub.publish(str('TeamA,aileton,' + str(prediction_ps + 1) + ',' + license_prediction))
+
     # userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
     # if userInput >= 1 and userInput <= 8:
@@ -242,6 +265,23 @@ def savePlate(self, plate):
     #     self.imNum += 1
     #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
     #     self.imNum += 1
+
+def is_garbage(self, plate):
+    points = 0
+
+    if (plate[0] == 'L'):
+        points += 1
+    
+    if plate[1] == 'L':
+        points += 1
+
+    if plate[2] == '7' or plate[2] == '5':
+        points += 1
+
+    if plate[3] == '7' or plate[3] == '5':
+        points += 1
+
+    return points >= 3
 
 def cleanImage(image, kernel):
     image = cv2.erode(image, kernel, iterations=1)
@@ -319,8 +359,8 @@ def four_point_transform(self, image, pts):
 	return warped
 
 def main(args):
-    lpd = license_plate_detector()
     rospy.init_node('license_plate_detector', anonymous=True)
+    lpd = license_plate_detector()
     try:
         rospy.spin()
     except KeyboardInterrupt:
