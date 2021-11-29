@@ -8,7 +8,7 @@ import time
 try:
     cv.imread(sys.argv[1], cv.IMREAD_COLOR)
 except:
-    img = cv.imread('sampleCar_P3.png',cv.IMREAD_COLOR)
+    img = cv.imread('sampleCar_P7.png',cv.IMREAD_COLOR)
     pass
 
 img = cv.medianBlur(img,5)
