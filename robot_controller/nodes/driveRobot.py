@@ -154,7 +154,7 @@ class image_converter:
 
 
 
-
+    
     if(self.startingdrive):
       move.linear.x = 0.22
       move.angular.z = 1.3
@@ -162,10 +162,14 @@ class image_converter:
       #THIS IS TO START DRIVING
       self.vel_pub.publish(move)
       now = rospy.get_rostime().secs
+      time.sleep(0.5)
+      '''
       while(rospy.get_rostime().secs - now < 1):
         print("Starting turn")
+      '''
       
       self.startingdrive = False
+    
   
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -600,7 +604,7 @@ def cleanImage(image, kernel):
 
 
 def car_is_spotted(self, blue_vals, white_vals, grey_vals):
-    print(np.sum(grey_vals))
+    #print(np.sum(grey_vals))
     return np.sum(blue_vals) > 25000 and np.sum(blue_vals) < 37500 and np.sum(white_vals) > 500
 
 def main(args):
