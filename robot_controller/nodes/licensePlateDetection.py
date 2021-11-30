@@ -4,6 +4,7 @@ import sys
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+from collections import Counter
 import time
 import os
 import csv
@@ -55,8 +56,12 @@ class license_plate_detector:
         self.upper_hsv_plate_bright = np.array([155, 35, 184])
         self.lower_hsv_plate3 = np.array([103, 0, 80])
         self.upper_hsv_plate3 = np.array([135, 41, 180])
+        self.lower_hsv_plate7 = np.array([106, 5, 92])
+        self.upper_hsv_plate7 = np.array([131, 65, 122])
         
         self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
+
+        self.predHistory = [[], [], [], [], [], [], [], []]
 
 
         self.imNum = 6735
@@ -69,23 +74,9 @@ class license_plate_detector:
         self.conv_model_parking_spot = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking_spot_model')
         self.conv_model_letters = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters_model')
         self.conv_model_numbers = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers_model')
-
-        #self.license_pub.publish("TeamA,aileton,0,XR58")
-
-        # with open('~/ros_ws/src/enph353/enph353_gazebo/scripts/plates.csv') as csvfile:
-        #     reader = csv.reader(csvfile)
-
-        #     rows = []
-
-        #     for row in reader:
-        #         rows.append(row)
-            
-        #     print(rows)
-        
-        # csvfile.close()
     
     def callback(self, data):
-        time.sleep(0.1)
+        time.sleep(0.05)
         
         img = self.bridge.imgmsg_to_cv2(data, "bgr8")
         height = img.shape[0]
@@ -100,10 +91,12 @@ class license_plate_detector:
         mask_plate_dark = cv2.inRange(hsv, self.lower_hsv_plate_dark, self.upper_hsv_plate_dark) // 255
         mask_plate_bright = cv2.inRange(hsv, self.lower_hsv_plate_bright, self.upper_hsv_plate_bright) // 255
         mask_plate_3 = cv2.inRange(hsv, self.lower_hsv_plate3, self.upper_hsv_plate3) // 255
+        mask_plate_7 = cv2.inRange(hsv, self.lower_hsv_plate7, self.upper_hsv_plate7) // 255
+
 
         # erode and dilate images
         kernel_3 = np.ones((3, 3), np.uint8)
-        kernel_5 = np.ones((7, 7), np.uint8)
+        kernel_5 = np.ones((5, 5), np.uint8)
 
         # slice images in half
         mask_white_dark = cleanImage(mask_white_dark, kernel_5)
@@ -111,6 +104,7 @@ class license_plate_detector:
         mask_plate_dark = cleanImage(mask_plate_dark, kernel_3)
         mask_plate_bright = cleanImage(mask_plate_bright, kernel_3)
         mask_plate_3 = cleanImage(mask_plate_3, kernel_3)
+        mask_plate_7 = cleanImage(mask_plate_7, kernel_3)
 
         mask_blue_l = mask_blue[:,0:width // 2]
 
@@ -126,8 +120,8 @@ class license_plate_detector:
 
         mask_white_bright_r = mask_white_bright[:,width // 2:]
         mask_white_dark_r = mask_white_dark[:,width // 2:]
-        mask_plate_bright_r = mask_plate_bright[:,width // 2:]
-        mask_plate_dark_r = mask_plate_dark[:,width // 2:]
+        mask_plate_bright_r = mask_plate_bright[:,width // 2:] + mask_plate_7[:, width//2:]
+        mask_plate_dark_r = mask_plate_dark[:,width // 2:] + mask_plate_7[:, width//2:]
 
         # process car if needed
         if (np.sum(self.licenses_found) < 6):
@@ -137,7 +131,7 @@ class license_plate_detector:
             if car_is_spotted(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l):
                 process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
         
-        else:
+        if (np.sum(self.licenses_found) > 4):
             if car_is_spotted(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r):
                 process_car(self, mask_blue_r, mask_white_dark_r, mask_plate_dark_r, img[:, width//2:], kernel_3)
 
@@ -248,9 +242,16 @@ def savePlate(self, plate):
 
         license_prediction = str(prediction_l1) + str(prediction_l2) + str(prediction_n1) + str(prediction_n2)
 
-        if not (is_garbage(self, license_prediction)):
+        if not (is_garbage(self, license_prediction, prediction_ps)):
             self.licenses_found[prediction_ps] = 1
-            self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + license_prediction))
+            self.predHistory[prediction_ps].append([prediction_l1, prediction_l2, prediction_n1, prediction_n2])
+
+            most_common_plate = mostCommon(self.predHistory[prediction_ps])
+            final_prediction = str(most_common_plate[0]) + str(most_common_plate[1]) + str(most_common_plate[2]) + str(most_common_plate[3])
+            self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + final_prediction))
+
+            if (len(self.predHistory[7]) > 2 and len(self.predHistory[6]) > 2):
+                self.license_pub.publish('Bestie,Bestie,-1,BE57')
 
     # userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
@@ -266,13 +267,16 @@ def savePlate(self, plate):
     #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
     #     self.imNum += 1
 
-def is_garbage(self, plate):
+def is_garbage(self, plate, plate_num):
     points = 0
 
-    if (plate[0] == 'L'):
+    if plate_num == 4:
+        points += 1
+
+    if (plate[0] == 'L' or plate[0] == 'T'):
         points += 1
     
-    if plate[1] == 'L':
+    if plate[1] == 'L' or plate[0] == 'T':
         points += 1
 
     if plate[2] == '7' or plate[2] == '5':
@@ -281,7 +285,7 @@ def is_garbage(self, plate):
     if plate[3] == '7' or plate[3] == '5':
         points += 1
 
-    return points >= 3
+    return points >= 4
 
 def cleanImage(image, kernel):
     image = cv2.erode(image, kernel, iterations=1)
@@ -357,6 +361,9 @@ def four_point_transform(self, image, pts):
 	warped = cv2.resize(warped, (100, 200), interpolation = cv2.INTER_CUBIC)
 	# return the warped image
 	return warped
+  
+def mostCommon(lst):
+    return [Counter(col).most_common(1)[0][0] for col in zip(*lst)]
 
 def main(args):
     rospy.init_node('license_plate_detector', anonymous=True)
