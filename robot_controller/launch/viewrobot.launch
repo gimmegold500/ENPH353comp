@@ -1,15 +1,17 @@
 <launch> 
 
-    <node pkg="robot_controller"
-         type="driveRobot.py"
-         name="driveRobot" 
-         output="screen">
-   </node>
-
-    <node pkg="robot_controller"
+      <node pkg="robot_controller"
          type="licensePlateDetection.py"
          name="licensePlateDetection" 
          output="screen">
-   </node>
+      </node>
+
+      <node pkg="robot_controller"
+         type="driveRobot.py"
+         name="driveRobot" 
+         output="screen">
+      </node>
+
+
    
 </launch>
