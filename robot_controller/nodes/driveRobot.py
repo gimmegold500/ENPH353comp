@@ -346,7 +346,7 @@ class image_converter:
           #while(rospy.get_rostime().secs - now < 1):
             #print("2nd left")
 
-          time.sleep(1.5)
+          time.sleep(2)
 
         if(self.stopduetograycar > 0):
           self.stopduetograycar -= 1
