@@ -76,7 +76,7 @@ class license_plate_detector:
         self.conv_model_numbers = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers_model')
     
     def callback(self, data):
-        time.sleep(0.05)
+        time.sleep(0.01)
         
         img = self.bridge.imgmsg_to_cv2(data, "bgr8")
         height = img.shape[0]

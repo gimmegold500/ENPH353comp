@@ -212,18 +212,18 @@ class image_converter:
       white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(
         white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
       current_pedo_image = current_pedo_image[int(current_pedo_image.shape[0]*0.5):int(
-        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.28):int(current_pedo_image.shape[1]*0.6)]
+        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.28):int(current_pedo_image.shape[1]*0.62)]
       past_pedo_image = past_pedo_image[int(past_pedo_image.shape[0]*0.5):int(
-        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.28):int(past_pedo_image.shape[1]*0.6)]
+        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.28):int(past_pedo_image.shape[1]*0.62)]
      
       red_raw = red_raw[int(red_raw.shape[0]*0.4):int(red_raw.shape[0]*0.6),int(
         red_raw.shape[1]*0.4):int(red_raw.shape[1]*0.6)]
       white_raw = white_raw[int(white_raw.shape[0]*0.5):int(white_raw.shape[0]*0.8),int(
         white_raw.shape[1]*0.45):int(white_raw.shape[1]*0.55)]
       pedo_raw = pedo_raw[int(pedo_raw.shape[0]*0.5):int(
-        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.28):int(pedo_raw.shape[1]*0.6)]
+        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.28):int(pedo_raw.shape[1]*0.62)]
       past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.5):int(
-        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.28):int(past_for_pedo_raw.shape[1]*0.6)]
+        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.28):int(past_for_pedo_raw.shape[1]*0.62)]
 
       difference_image = current_pedo_image - past_pedo_image
       difference_raw = pedo_raw - past_for_pedo_raw
@@ -278,7 +278,7 @@ class image_converter:
         mask_blue_l = mask_blue[:,0:width // 2]
 
         move.linear.x = 0.3
-        move.angular.z = 1.3
+        move.angular.z = 1.2
 
         #THIS IS TO START DRIVING
         self.vel_pub.publish(move)
@@ -338,7 +338,7 @@ class image_converter:
 
         if(self.stopduetograycar == 1):
           move.linear.x = 0.2
-          move.angular.z = 0.9
+          move.angular.z = 1.0
 
           #THIS IS TO START DRIVING
           self.vel_pub.publish(move)
@@ -346,7 +346,7 @@ class image_converter:
           #while(rospy.get_rostime().secs - now < 1):
             #print("2nd left")
 
-          time.sleep(1.5)
+          time.sleep(2.5)
 
         if(self.stopduetograycar > 0):
           self.stopduetograycar -= 1
