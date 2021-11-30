@@ -61,7 +61,7 @@ class license_plate_detector:
         self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
 
 
-        self.imNum = 12545
+        self.imNum = 13832
 
 
         self.sess = tf.Session()
@@ -106,7 +106,7 @@ class license_plate_detector:
 
         # erode and dilate images
         kernel_3 = np.ones((3, 3), np.uint8)
-        kernel_5 = np.ones((7, 7), np.uint8)
+        kernel_5 = np.ones((9, 9), np.uint8)
 
         # slice images in half
         mask_white_dark = cleanImage(mask_white_dark, kernel_5)
@@ -258,24 +258,24 @@ def savePlate(self, plate):
     userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
     if userInput >= 1 and userInput <= 8:
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/U-' +  str(self.imNum) + '.png', letterOne)
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/A-' +  str(self.imNum) + '.png', letterOne)
         self.imNum += 1
-        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/U-' +  str(self.imNum) + '.png', letterTwo)
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/A-' +  str(self.imNum) + '.png', letterTwo)
         self.imNum += 1
-        # cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/1-' +  str(self.imNum) + '.png', numberOne)
-        # self.imNum += 1
-        # cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/1-' +  str(self.imNum) + '.png', numberTwo)
-        # self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/1-' +  str(self.imNum) + '.png', numberOne)
+        self.imNum += 1
+        cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/1-' +  str(self.imNum) + '.png', numberTwo)
+        self.imNum += 1
         cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
         self.imNum += 1
 
 def is_garbage(self, plate):
     points = 0
 
-    if (plate[0] == 'L'):
+    if (plate[0] == 'T' or plate[0] == 'L'):
         points += 1
     
-    if plate[1] == 'L':
+    if plate[1] == 'T' or plate[0] == 'L':
         points += 1
 
     if plate[2] == '7' or plate[2] == '5':
