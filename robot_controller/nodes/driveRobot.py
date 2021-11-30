@@ -49,6 +49,7 @@ class image_converter:
     self.time_pub = rospy.Publisher("/license_plate", String, queue_size=1)
     time.sleep(1)
     self.time_pub.publish("Bestie,Bestie,0,XR58")
+    time.sleep(1)
     self.redcounter = 0
     self.redcounterdriving = 0
     self.whitecounter = 0
@@ -151,10 +152,18 @@ class image_converter:
         move.linear.x = 0
         move.angular.z = 0
         self.vel_pub.publish(move)
+  
+    try:
+      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    except CvBridgeError as e:
+      print(e)
 
+    willBePast = cv_image
+    #cv2.imshow("Image window", cv_image)
+    #cv2.waitKey(3)
+    
 
-
-
+    '''
     if(self.startingdrive):
       move.linear.x = 0.22
       move.angular.z = 1.3
@@ -165,23 +174,10 @@ class image_converter:
       #while(rospy.get_rostime().secs - now < 1):
         #print("Starting turn")
       time.sleep(0.5)
-      
+
       self.startingdrive = False
-  
-    try:
-      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-    except CvBridgeError as e:
-      print(e)
+    '''
 
-    willBePast = cv_image
-    #cv2.imshow("Image window", cv_image)
-    #cv2.waitKey(3)
-
-  
-
-
-    #Pedestrian stuff here
-    
     
     RedThresholdLower = np.array([0,113,253])
     RedThresholdHigher = np.array([255, 255,255])
@@ -269,7 +265,30 @@ class image_converter:
         self.redcounterdriving -= 1
 
       #driving code here as well as pedestrian stuff
-      if((self.redcounter > 0 
+      if(self.startingdrive):
+            
+        imgforbluecar = cv_image
+        height = imgforbluecar.shape[0]
+        width = imgforbluecar.shape[1]
+        imgforbluecar = imgforbluecar[height // 2 :  (3 * height) // 4]
+        hsv = cv2.cvtColor(imgforbluecar, cv2.COLOR_BGR2HSV)
+
+        # get masks
+        mask_blue = cv2.inRange(hsv, self.lower_hsv_blue, self.upper_hsv_blue) // 255
+        mask_blue_l = mask_blue[:,0:width // 2]
+
+        move.linear.x = 0.3
+        move.angular.z = 1.3
+
+        #THIS IS TO START DRIVING
+        self.vel_pub.publish(move)
+          
+        if (np.sum(mask_blue_l) > 2000):
+          #process_car(self, mask_blue_l, mask_white_dark_l, mask_plate_dark_l, img[:, 0:width//2], kernel_3)
+
+          print("light TRUE")
+          self.startingdrive = False
+      elif((self.redcounter > 0 
             and (np.sum(white_image) > 2000) 
             #and (np.sum(current_pedo_image - past_pedo_image) > 150) 
             and (np.sum(difference_raw) > 50000 )) or self.pedoseen > 0 ) :
@@ -331,8 +350,6 @@ class image_converter:
 
         if(self.stopduetograycar > 0):
           self.stopduetograycar -= 1
-
-
       elif(self.redcounterdriving > 0 and (self.whitecounter) > 0):
         self.turnleft += 1
 
@@ -479,8 +496,6 @@ class image_converter:
         #THIS IS REQUIRED FOR DRIVING
         self.vel_pub.publish(move)
       
-  
-
     #After last red line, starts looking for last Car
     if(self.turnleft > 25):
       #print("turnleft:")
