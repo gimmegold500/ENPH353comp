@@ -278,7 +278,7 @@ class image_converter:
         mask_blue_l = mask_blue[:,0:width // 2]
 
         move.linear.x = 0.3
-        move.angular.z = 1.3
+        move.angular.z = 1.2
 
         #THIS IS TO START DRIVING
         self.vel_pub.publish(move)
@@ -338,7 +338,7 @@ class image_converter:
 
         if(self.stopduetograycar == 1):
           move.linear.x = 0.2
-          move.angular.z = 0.9
+          move.angular.z = 1.0
 
           #THIS IS TO START DRIVING
           self.vel_pub.publish(move)

@@ -76,7 +76,7 @@ class license_plate_detector:
         self.conv_model_numbers = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers_model')
     
     def callback(self, data):
-        time.sleep(0.05)
+        time.sleep(0.01)
         
         img = self.bridge.imgmsg_to_cv2(data, "bgr8")
         height = img.shape[0]
@@ -237,8 +237,8 @@ def savePlate(self, plate):
         prediction_n2 = np.argmax(self.conv_model_numbers.predict(numberTwo_aug)[0])
 
         print(ps_pred)
-        print("Prediction = %d"%(prediction_ps + 1))
-        print("Prediction = %s %s %d %d"%(prediction_l1, prediction_l2, prediction_n1, prediction_n2))
+        print("Parking spot prediction = %d"%(prediction_ps + 1))
+        print("License plate prediction = %s %s %d %d"%(prediction_l1, prediction_l2, prediction_n1, prediction_n2))
 
         license_prediction = str(prediction_l1) + str(prediction_l2) + str(prediction_n1) + str(prediction_n2)
 
@@ -246,12 +246,17 @@ def savePlate(self, plate):
             self.licenses_found[prediction_ps] = 1
             self.predHistory[prediction_ps].append([prediction_l1, prediction_l2, prediction_n1, prediction_n2])
 
+            print(self.predHistory)
             most_common_plate = mostCommon(self.predHistory[prediction_ps])
             final_prediction = str(most_common_plate[0]) + str(most_common_plate[1]) + str(most_common_plate[2]) + str(most_common_plate[3])
+            print("Most common license plate " + final_prediction)
+            
             self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + final_prediction))
 
             if (len(self.predHistory[7]) > 2 and len(self.predHistory[6]) > 2):
                 self.license_pub.publish('Bestie,Bestie,-1,BE57')
+        else:
+            print("WEE WOO WEE WOO THE GARBAGE POLICE ARE HERE")
 
     # userInput = int(input("Put in plate # or 0 if you would like to skip"))
 
