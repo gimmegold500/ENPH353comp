@@ -151,7 +151,7 @@ def car_is_spotted(self, blue_vals, white_vals, grey_vals):
     return np.sum(blue_vals) > 22500 and np.sum(blue_vals) < 40000 and np.sum(white_vals) > 500
 
 def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
-    print("CAR!")
+    #print("CAR!")
 
     shape = np.shape(blue_vals)
 
