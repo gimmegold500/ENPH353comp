@@ -4,7 +4,8 @@
          type="licensePlateDetection.py"
          name="licensePlateDetection" 
          output="screen">
-   </node>
+      </node>
+
 
     <node pkg="robot_controller"
          type="driveRobot.py"
