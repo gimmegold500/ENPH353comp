@@ -277,7 +277,7 @@ class image_converter:
         mask_blue = cv2.inRange(hsv, self.lower_hsv_blue, self.upper_hsv_blue) // 255
         mask_blue_l = mask_blue[:,0:width // 2]
 
-        move.linear.x = 0.22
+        move.linear.x = 0.3
         move.angular.z = 1.3
 
         #THIS IS TO START DRIVING
