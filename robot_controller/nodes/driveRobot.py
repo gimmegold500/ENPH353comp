@@ -254,7 +254,7 @@ class image_converter:
       #cv2.waitKey(2)
 
       if(np.sum(diswhiteline_image) > 10000):
-        if(redcounter == 0):
+        if(self.redcounter == 0):
           self.turnleft +=1
 
         self.redcounter = 10

@@ -237,6 +237,7 @@ def savePlate(self, plate):
         prediction_n2 = np.argmax(self.conv_model_numbers.predict(numberTwo_aug)[0])
 
         print(ps_pred)
+        print(self.conv_model_letters.predict(letterOne_aug)[0])
         print("Parking spot prediction = %d"%(prediction_ps + 1))
         print("License plate prediction = %s %s %d %d"%(prediction_l1, prediction_l2, prediction_n1, prediction_n2))
 
@@ -273,9 +274,12 @@ def savePlate(self, plate):
     #     self.imNum += 1
 
 def is_garbage(self, plate, plate_num):
+    # if plate_num == 3 and ((self.licenses_found[1] == 0 and self.licenses_found[2] == 0) or (self.licenses_found[4] == 1 and self.licenses_found[5] == 1)):
+    #     return false
+    
     points = 0
 
-    if plate_num == 4:
+    if plate_num == 3:
         points += 1
 
     if (plate[0] == 'L' or plate[0] == 'T'):
