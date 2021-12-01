@@ -254,6 +254,9 @@ class image_converter:
       #cv2.waitKey(2)
 
       if(np.sum(diswhiteline_image) > 10000):
+        if(self.redcounter == 0):
+          self.turnleft +=1
+
         self.redcounter = 10
         self.redcounterdriving = 15
 
@@ -351,7 +354,7 @@ class image_converter:
         if(self.stopduetograycar > 0):
           self.stopduetograycar -= 1
       elif(self.redcounterdriving > 0 and (self.whitecounter) > 0):
-        self.turnleft += 1
+        #self.turnleft += 1
 
         gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
@@ -467,8 +470,8 @@ class image_converter:
       
         #Next lines until break are all for testing
         cv2.circle(gray, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
-        cv2.imshow("img", gray)
-        cv2.waitKey(2)
+        # cv2.imshow("img", gray) #I COMMENTED THIS OUT 
+        # cv2.waitKey(2)
 
         #cv2.circle(img_raw, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
         #cv2.imshow("img_raw", img_raw)
@@ -497,7 +500,7 @@ class image_converter:
         self.vel_pub.publish(move)
       
     #After last red line, starts looking for last Car
-    if(self.turnleft > 25):
+    if(self.turnleft > 3):
       #print("turnleft:")
       #print(self.turnleft)
 
