@@ -96,7 +96,7 @@ class license_plate_detector:
 
         # erode and dilate images
         kernel_3 = np.ones((3, 3), np.uint8)
-        kernel_5 = np.ones((5, 5), np.uint8)
+        kernel_5 = np.ones((9, 9), np.uint8)
 
         # slice images in half
         mask_white_dark = cleanImage(mask_white_dark, kernel_5)
