@@ -38,8 +38,8 @@ class image_converter:
     #self.vel_pub = rospy.Publisher("/cmd_vel",Twist)
     self.vel_pub = rospy.Publisher("/R1/cmd_vel",Twist)
 
-    self.basespeedhigher = 0.18
-    self.basespeedlower = 0.12
+    self.basespeedhigher = 0.22
+    self.basespeedlower = 0.14
 
     self.flag = True
 
@@ -119,6 +119,8 @@ class image_converter:
 
     self.count = 0
     self.intialtime = rospy.get_rostime().secs
+    self.lasterror = 0
+    self.prevtime = 0
     
 
     self.bridge = CvBridge()
@@ -200,15 +202,15 @@ class image_converter:
       pedo_raw = cv2.inRange(currenthsv,PedoThresholdLower,PedoThresholdHigher)
       past_for_pedo_raw = cv2.inRange(pasthsv,RedThresholdLower, RedThresholdHigher)
 
-      diswhiteline_image = red_raw // 255
+      red_image = red_raw // 255
       white_image = white_raw // 255
       current_pedo_image = pedo_raw // 255
       past_pedo_image = past_for_pedo_raw // 255
       
   
 
-      diswhiteline_image = diswhiteline_image[int(diswhiteline_image.shape[0]*0.9):diswhiteline_image.shape[0],int(
-        diswhiteline_image.shape[1]*0.2):int(diswhiteline_image.shape[1]*0.8)]
+      red_image = red_image[int(red_image.shape[0]*0.9):red_image.shape[0],int(
+        red_image.shape[1]*0.2):int(red_image.shape[1]*0.8)]
       white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(
         white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
       current_pedo_image = current_pedo_image[int(current_pedo_image.shape[0]*0.5):int(
@@ -253,13 +255,20 @@ class image_converter:
       #cv2.imshow("Red", red_raw)
       #cv2.waitKey(2)
 
-      if(np.sum(diswhiteline_image) > 10000):
+      if(np.sum(red_image) > 10000):
+        if(self.redcounter == 0):
+          self.turnleft += 1
+
         self.redcounter = 10
         self.redcounterdriving = 15
+
+      
 
       if(self.redcounter > 0 and self.pedoseen == 0):
         self.redcounter -= 1
         #print("Red stop")
+
+      
 
       if(self.redcounterdriving > 0):
         self.redcounterdriving -= 1
@@ -351,16 +360,16 @@ class image_converter:
         if(self.stopduetograycar > 0):
           self.stopduetograycar -= 1
       elif(self.redcounterdriving > 0 and (self.whitecounter) > 0):
-        self.turnleft += 1
+        
 
         gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         img_raw= cv2.inRange(hsv, self.lower_hsv_b, self.upper_hsv_b) 
         img = img_raw //255
 
-        img = img[int(img.shape[0]*0.6):img.shape[0],int(img.shape[1]*0.2):int(img.shape[1]*0.8)]
-        gray = gray[int(gray.shape[0]*0.6):gray.shape[0],int(gray.shape[1]*0.2):int(gray.shape[1]*0.8)]
-        img_raw = img_raw[int(img_raw.shape[0]*0.6):img_raw.shape[0],int(img_raw.shape[1]*0.2):int(img_raw.shape[1]*0.8)]
+        img = img[int(img.shape[0]*0.9):img.shape[0],int(img.shape[1]*0.10):int(img.shape[1]*0.90)]
+        gray = gray[int(gray.shape[0]*0.9):gray.shape[0],int(gray.shape[1]*0.1):int(gray.shape[1]*0.9)]
+        img_raw = img_raw[int(img_raw.shape[0]*0.9):img_raw.shape[0],int(img_raw.shape[1]*0.10):int(img_raw.shape[1]*0.90)]
 
         img = cv2.erode(img, None, iterations = 4)
         img_raw = cv2.erode(img_raw, None, iterations = 4)
@@ -384,18 +393,22 @@ class image_converter:
         cv2.waitKey(2)
 
         #How good the PID is
-        VelWeight = 215 #110
+        VelWeight = 100 #215
         cX = 1*(cX - img.shape[1]*0.5)/VelWeight
+        self.lasterror 
+        dX = self.lasterror / (rospy.get_rostime().nsecs-self.prevtime)
 
         #for Testing
         #print(cX)
 
         move.linear.x = 0.45
-        move.angular.z = -1*cX
+        move.angular.z = -1*cX - 2*dX 
 
         #print("fast driving")
 
         self.vel_pub.publish(move)
+
+        self.lasterror = cX
       else:
         
         #if(self.carwatching == 10):
@@ -417,9 +430,9 @@ class image_converter:
         #_, img = cv2.threshold(gray, threshold, 255, 0 )
 
         #img = img[700:800]
-        img = img[int(img.shape[0]*0.6):img.shape[0],int(img.shape[1]*0.2):int(img.shape[1]*0.8)]
-        gray = gray[int(gray.shape[0]*0.6):gray.shape[0],int(gray.shape[1]*0.2):int(gray.shape[1]*0.8)]
-        img_raw = img_raw[int(img_raw.shape[0]*0.6):img_raw.shape[0],int(img_raw.shape[1]*0.2):int(img_raw.shape[1]*0.8)]
+        img = img[int(img.shape[0]*0.9):img.shape[0],int(img.shape[1]*0.10):int(img.shape[1]*0.90)]
+        gray = gray[int(gray.shape[0]*0.9):gray.shape[0],int(gray.shape[1]*0.1):int(gray.shape[1]*0.9)]
+        img_raw = img_raw[int(img_raw.shape[0]*0.9):img_raw.shape[0],int(img_raw.shape[1]*0.10):int(img_raw.shape[1]*0.90)]
 
         img = cv2.erode(img, None, iterations = 4)
         img_raw = cv2.erode(img_raw, None, iterations = 4)
@@ -474,10 +487,11 @@ class image_converter:
         #cv2.imshow("img_raw", img_raw)
         #cv2.waitKey(2)
 
-
         #How good the PID is
-        VelWeight = 215 #110
+        VelWeight = 100 #215
         cX = 1*(cX - img.shape[1]*0.5)/VelWeight
+        self.lasterror 
+        dX = self.lasterror / (rospy.get_rostime().nsecs-self.prevtime)
 
         #for Testing
         #print(cX)
@@ -485,19 +499,21 @@ class image_converter:
 
 
         
-        if(abs(cX) < 0.4):
+        if(abs(cX) < 2.5):
           move.linear.x = self.basespeedhigher 
-          move.angular.z = -1*cX
+          move.angular.z = -1*cX - 2*dX
         else:
           move.linear.x = self.basespeedlower 
-          move.angular.z = -1*cX
+          move.angular.z = -1*cX - 2*dX
 
 
         #THIS IS REQUIRED FOR DRIVING
         self.vel_pub.publish(move)
+
+        self.lasterror = cX
       
     #After last red line, starts looking for last Car
-    if(self.turnleft > 25):
+    if(self.turnleft > 3):
       #print("turnleft:")
       #print(self.turnleft)
 
@@ -541,19 +557,19 @@ class image_converter:
           self.lookforintersections = True
 
     #After seeing last car starts looking for Intersections
-    if(self.lookforintersections and (rospy.get_rostime().secs - self.firstsawthecar) > 3 ):
+    if(self.lookforintersections and (rospy.get_rostime().secs - self.firstsawthecar) > 1 ):
 
-      WhiteThresholdLower = np.array([0,0,254])
+      WhiteThresholdLower = np.array([0,0,254]) 
       WhiteThresholdHigher = np.array([255, 243, 255])
 
       currenthsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
       diswhiteline_raw = cv2.inRange(currenthsv, WhiteThresholdLower, WhiteThresholdHigher)
 
-      diswhiteline_image = diswhiteline_raw // 255
+      red_image = diswhiteline_raw // 255
 
-      diswhiteline_image = diswhiteline_image[int(diswhiteline_image.shape[0]*0.2):diswhiteline_image.shape[0],int(
-        diswhiteline_image.shape[1]*0.2):int(diswhiteline_image.shape[1]*0.4)]
+      red_image = red_image[int(red_image.shape[0]*0.2):red_image.shape[0],int(
+        red_image.shape[1]*0.2):int(red_image.shape[1]*0.4)]
 
 
       diswhiteline_raw = diswhiteline_raw[int(diswhiteline_raw.shape[0]*0.2):diswhiteline_raw.shape[0],int(
@@ -563,16 +579,16 @@ class image_converter:
       #cv2.imshow("looking for white line", diswhiteline_raw)
       #cv2.waitKey(2)
 
-      #print(np.sum(diswhiteline_image))
+      #print(np.sum(red_image))
 
-      if(np.sum(diswhiteline_image) < 1000):
+      if(np.sum(red_image) < 1000):
         self.basespeedhigher = 0.15
         self.basespeedlower = 0.10
           
         #self.carwatching -= 1
 
-        move.linear.x = 0.2
-        move.angular.z = 0.9
+        move.linear.x = 0.3
+        move.angular.z = 1.2
 
         #THIS IS TO START DRIVING
         self.vel_pub.publish(move)
@@ -602,6 +618,7 @@ class image_converter:
     '''
 
     previous_image = willBePast
+    self.prevtime = rospy.get_rostime().nsecs
 
     '''
     try:
