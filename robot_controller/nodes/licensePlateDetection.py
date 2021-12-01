@@ -257,7 +257,7 @@ def savePlate(self, plate):
             
             self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + final_prediction))
 
-            if (len(self.predHistory[7]) > 2 and len(self.predHistory[6]) > 2) or rospy.get_rostime().secs > 180:
+            if (len(self.predHistory[7]) > 4 and len(self.predHistory[6]) > 4) or rospy.get_rostime().secs > 180:
                 for i in range(len(self.predHistory)):
                     if len(self.predHistory[i]) == 0 and len(self.garbageHistory[i]) > 0:
 
