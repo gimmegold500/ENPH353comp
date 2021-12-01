@@ -123,8 +123,15 @@ class license_plate_detector:
         mask_plate_bright_r = mask_plate_bright[:,width // 2:] + mask_plate_7[:, width//2:]
         mask_plate_dark_r = mask_plate_dark[:,width // 2:] + mask_plate_7[:, width//2:]
 
+        white_vals = mask_white_dark
+        shape = np.shape(white_vals)
+        mask_white = np.reshape(white_vals, (shape[0], shape[1], -1))
+        mask_grey = img * mask_white
+
+        cv2.imshow("masked white car", mask_grey)
+
         # process car if needed
-        if (np.sum(self.licenses_found) < 6):
+        if (np.sum(self.licenses_found) <= 6):
             if car_is_spotted(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l):
                 process_car(self, mask_blue_l, mask_white_bright_l, mask_plate_bright_l, img[:, 0:width//2], kernel_3)
             
@@ -139,15 +146,15 @@ class license_plate_detector:
                 process_car(self, mask_blue_r, mask_white_bright_r, mask_plate_bright_r, img[:, 0:width//2], kernel_3)
 
 def car_is_spotted(self, blue_vals, white_vals, grey_vals):
-    return np.sum(blue_vals) > 22500 and np.sum(blue_vals) < 40000 and np.sum(white_vals) > 500
+    return np.sum(blue_vals) > 20000 and np.sum(blue_vals) < 40000 and np.sum(white_vals) > 500
 
 def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
     print("CAR!")
 
     shape = np.shape(blue_vals)
 
-    mask_blue = np.reshape(blue_vals, (shape[0], shape[1], -1))
-    mask_grey = og_img * mask_blue
+    # mask_blue = np.reshape(blue_vals, (shape[0], shape[1], -1))
+    # mask_grey = og_img * mask_blue
 
     shape = np.shape(white_vals)
     mask_white = np.reshape(white_vals, (shape[0], shape[1], -1))
@@ -156,7 +163,7 @@ def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
     shape = np.shape(grey_vals)
     grey_vals = np.reshape(grey_vals, (shape[0], shape[1], -1))
     plate = og_img * grey_vals
-    cv2.imshow("plate", plate)
+    # cv2.imshow("plate", plate)
 
     plate = cleanImage(plate, kernel)
     plate = plate + mask_grey
@@ -181,22 +188,20 @@ def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
                 max_area = area
 
         contours = get_list_contours(contours)
-        cv2.imshow("contours", og_img)
-        cv2.waitKey(2)
 
         # new_contours = [order_points(contours).astype(int)]
         new_plate = four_point_transform(self, og_img, cnt)
         
-        cv2.imshow("warped plate", new_plate)
-        cv2.waitKey(2)
+        # cv2.imshow("warped plate", new_plate)
+        # cv2.waitKey(2)
 
         savePlate(self, new_plate)
 
 def savePlate(self, plate):
     parkingSpot = plate[66 : 130, 50 :]
         
-    cv2.imshow("parking", parkingSpot)
-    cv2.waitKey(2)
+    # cv2.imshow("parking", parkingSpot)
+    # cv2.waitKey(2)
 
     actual_plate = plate[140 : 175, :]
     letters = actual_plate[ : , 3 : 40] # 5 42
@@ -208,17 +213,17 @@ def savePlate(self, plate):
     numberOne = numbers[:, :18]
     numberTwo = numbers[:, 18 : 36]
         
-    cv2.imshow("alphaOne", letterOne)
-    cv2.waitKey(2)
+    # cv2.imshow("alphaOne", letterOne)
+    # cv2.waitKey(2)
         
-    cv2.imshow("alphaTwo", letterTwo)
-    cv2.waitKey(2)
+    # cv2.imshow("alphaTwo", letterTwo)
+    # cv2.waitKey(2)
         
-    cv2.imshow("numberOne", numberOne)
-    cv2.waitKey(2)
+    # cv2.imshow("numberOne", numberOne)
+    # cv2.waitKey(2)
         
-    cv2.imshow("numberTwo", numberTwo)
-    cv2.waitKey(2)
+    # cv2.imshow("numberTwo", numberTwo)
+    # cv2.waitKey(2)
 
     with self.graph.as_default():
         parkingSpot_aug = np.expand_dims(parkingSpot, axis = 0)
@@ -230,14 +235,14 @@ def savePlate(self, plate):
         backend.set_session(self.sess)
 
         ps_pred = self.conv_model_parking_spot.predict(parkingSpot_aug)[0]
-        prediction_ps = np.argmax(self.conv_model_parking_spot.predict(parkingSpot_aug)[0])
+        prediction_ps = np.argmax(ps_pred)
         prediction_l1 = chr(np.argmax(self.conv_model_letters.predict(letterOne_aug)[0]) + 65)
         prediction_l2 = chr(np.argmax(self.conv_model_letters.predict(letterTwo_aug)[0]) + 65)
         prediction_n1 = np.argmax(self.conv_model_numbers.predict(numberOne_aug)[0])
         prediction_n2 = np.argmax(self.conv_model_numbers.predict(numberTwo_aug)[0])
 
-        print(ps_pred)
-        print(self.conv_model_letters.predict(letterOne_aug)[0])
+        # print(ps_pred)
+        # print(self.conv_model_letters.predict(letterOne_aug)[0])
         print("Parking spot prediction = %d"%(prediction_ps + 1))
         print("License plate prediction = %s %s %d %d"%(prediction_l1, prediction_l2, prediction_n1, prediction_n2))
 
@@ -248,7 +253,7 @@ def savePlate(self, plate):
             self.predHistory[prediction_ps].append([prediction_l1, prediction_l2, prediction_n1, prediction_n2])
 
             print(self.predHistory)
-            most_common_plate = mostCommon(self.predHistory[prediction_ps])
+            most_common_plate = mostCommon(self.predHistory[prediction_ps], prediction_ps + 1)
             final_prediction = str(most_common_plate[0]) + str(most_common_plate[1]) + str(most_common_plate[2]) + str(most_common_plate[3])
             print("Most common license plate " + final_prediction)
             
@@ -258,24 +263,12 @@ def savePlate(self, plate):
                 self.license_pub.publish('Bestie,Bestie,-1,BE57')
         else:
             print("WEE WOO WEE WOO THE GARBAGE POLICE ARE HERE")
-
-    # userInput = int(input("Put in plate # or 0 if you would like to skip"))
-
-    # if userInput >= 1 and userInput <= 8:
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/Z-' +  str(self.imNum) + '.png', letterOne)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters/Z-' +  str(self.imNum) + '.png', letterTwo)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/8-' +  str(self.imNum) + '.png', numberOne)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers/8-' +  str(self.imNum) + '.png', numberTwo)
-    #     self.imNum += 1
-    #     cv2.imwrite(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking/' + str(userInput) + '-' +  str(self.imNum) + '.png', parkingSpot)
-    #     self.imNum += 1
+            print(license_prediction)
 
 def is_garbage(self, plate, plate_num):
-    # if plate_num == 3 and ((self.licenses_found[1] == 0 and self.licenses_found[2] == 0) or (self.licenses_found[4] == 1 and self.licenses_found[5] == 1)):
-    #     return false
+    if plate_num == 3 and ((self.licenses_found[1] == 0 and self.licenses_found[2] == 0) or (self.licenses_found[4] == 1 and self.licenses_found[5] == 1)):
+        print("oop")
+        return True
     
     points = 0
 
@@ -301,7 +294,7 @@ def cleanImage(image, kernel):
     return cv2.dilate(image, kernel, iterations=1)
 
 def order_points(pts):
-    # initialzie a list of coordinates that will be ordered
+    # initialize a list of coordinates that will be ordered
     # such that the first entry in the list is the top-left,
     # the second entry is the top-right, the third is the
     # bottom-right, and the fourth is the bottom-left
@@ -371,8 +364,11 @@ def four_point_transform(self, image, pts):
 	# return the warped image
 	return warped
   
-def mostCommon(lst):
-    return [Counter(col).most_common(1)[0][0] for col in zip(*lst)]
+def mostCommon(lst, spot):
+    if spot == 4:
+        return max(lst, key = lst.count)
+    else:
+        return [Counter(col).most_common(1)[0][0] for col in zip(*lst)]
 
 def main(args):
     rospy.init_node('license_plate_detector', anonymous=True)

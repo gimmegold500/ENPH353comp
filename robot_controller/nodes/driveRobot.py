@@ -470,8 +470,8 @@ class image_converter:
       
         #Next lines until break are all for testing
         cv2.circle(gray, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
-        cv2.imshow("img", gray)
-        cv2.waitKey(2)
+        # cv2.imshow("img", gray) #I COMMENTED THIS OUT 
+        # cv2.waitKey(2)
 
         #cv2.circle(img_raw, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
         #cv2.imshow("img_raw", img_raw)

@@ -8,7 +8,7 @@ import time
 try:
     cv.imread(sys.argv[1], cv.IMREAD_COLOR)
 except:
-    img = cv.imread('sampleCar_P3.png',cv.IMREAD_COLOR)
+    img = cv.imread('P1.png',cv.IMREAD_COLOR)
     pass
 
 img = cv.medianBlur(img,5)
@@ -17,8 +17,8 @@ img = cv.medianBlur(img,5)
 hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
 
-uh, us, uv = 135, 41, 180
-lh, ls, lv = 103, 0, 80
+lh, ls, lv = 0, 0, 94
+uh, us, uv = 0, 0, 140
 
 lower_hsv = np.array([lh,ls,lv])
 upper_hsv = np.array([uh,us,uv])
