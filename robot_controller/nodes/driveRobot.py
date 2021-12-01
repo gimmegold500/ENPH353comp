@@ -128,6 +128,7 @@ class image_converter:
 
     #We can either create a separate time node or include time somewhere in this
     #self.image_sub = rospy.Subscriber("/clock", time, self.callback)
+    time.sleep(5)
 
 
 
@@ -212,18 +213,18 @@ class image_converter:
       white_image = white_image[int(white_image.shape[0]*0.5):int(white_image.shape[0]*0.8),int(
         white_image.shape[1]*0.45):int(white_image.shape[1]*0.55)]
       current_pedo_image = current_pedo_image[int(current_pedo_image.shape[0]*0.5):int(
-        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.28):int(current_pedo_image.shape[1]*0.62)]
+        current_pedo_image.shape[0]*0.7),int(current_pedo_image.shape[1]*0.28):int(current_pedo_image.shape[1]*0.60)]
       past_pedo_image = past_pedo_image[int(past_pedo_image.shape[0]*0.5):int(
-        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.28):int(past_pedo_image.shape[1]*0.62)]
+        past_pedo_image.shape[0]*0.7),int(past_pedo_image.shape[1]*0.28):int(past_pedo_image.shape[1]*0.60)]
      
       red_raw = red_raw[int(red_raw.shape[0]*0.4):int(red_raw.shape[0]*0.6),int(
         red_raw.shape[1]*0.4):int(red_raw.shape[1]*0.6)]
       white_raw = white_raw[int(white_raw.shape[0]*0.5):int(white_raw.shape[0]*0.8),int(
         white_raw.shape[1]*0.45):int(white_raw.shape[1]*0.55)]
       pedo_raw = pedo_raw[int(pedo_raw.shape[0]*0.5):int(
-        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.28):int(pedo_raw.shape[1]*0.62)]
+        pedo_raw.shape[0]*0.7),int(pedo_raw.shape[1]*0.28):int(pedo_raw.shape[1]*0.60)]
       past_for_pedo_raw = past_for_pedo_raw[int(past_for_pedo_raw.shape[0]*0.5):int(
-        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.28):int(past_for_pedo_raw.shape[1]*0.62)]
+        past_for_pedo_raw.shape[0]*0.7),int(past_for_pedo_raw.shape[1]*0.28):int(past_for_pedo_raw.shape[1]*0.60)]
 
       difference_image = current_pedo_image - past_pedo_image
       difference_raw = pedo_raw - past_for_pedo_raw
@@ -255,9 +256,11 @@ class image_converter:
 
       if(np.sum(diswhiteline_image) > 10000):
         if(self.redcounter == 0):
+          print("TURNLEFT INCREASED!!!")
           self.turnleft +=1
+          print(self.turnleft)
 
-        self.redcounter = 10
+        self.redcounter = 15
         self.redcounterdriving = 15
 
       if(self.redcounter > 0 and self.pedoseen == 0):
@@ -294,7 +297,7 @@ class image_converter:
       elif((self.redcounter > 0 
             and (np.sum(white_image) > 2000) 
             #and (np.sum(current_pedo_image - past_pedo_image) > 150) 
-            and (np.sum(difference_raw) > 50000 )) or self.pedoseen > 0 ) :
+            and (np.sum(difference_raw) > 45000 )) or self.pedoseen > 0 ) :
 
         if(self.pedoseen <= 0):
           self.pedoseen = 10
@@ -383,8 +386,8 @@ class image_converter:
       
         #Next lines until break are all for testing
         cv2.circle(gray, (cX,cY), radius=0, color=(0, 0, 255), thickness = 50)
-        cv2.imshow("img", gray)
-        cv2.waitKey(2)
+        #cv2.imshow("img", gray)
+        #cv2.waitKey(2)
 
         #How good the PID is
         VelWeight = 215 #110
@@ -500,7 +503,7 @@ class image_converter:
         self.vel_pub.publish(move)
       
     #After last red line, starts looking for last Car
-    if(self.turnleft > 3):
+    if(self.turnleft > 2):
       #print("turnleft:")
       #print(self.turnleft)
 
@@ -544,7 +547,7 @@ class image_converter:
           self.lookforintersections = True
 
     #After seeing last car starts looking for Intersections
-    if(self.lookforintersections and (rospy.get_rostime().secs - self.firstsawthecar) > 3 ):
+    if(self.lookforintersections and (rospy.get_rostime().secs - self.firstsawthecar) > 2 ):
 
       WhiteThresholdLower = np.array([0,0,254])
       WhiteThresholdHigher = np.array([255, 243, 255])

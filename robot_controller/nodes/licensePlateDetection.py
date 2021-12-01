@@ -74,7 +74,7 @@ class license_plate_detector:
         self.conv_model_parking_spot = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking_spot_model')
         self.conv_model_letters = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters_model')
         self.conv_model_numbers = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/numbers_model')
-    
+        
     def callback(self, data):
         time.sleep(0.01)
         
@@ -128,7 +128,8 @@ class license_plate_detector:
         mask_white = np.reshape(white_vals, (shape[0], shape[1], -1))
         mask_grey = img * mask_white
 
-        cv2.imshow("masked white car", mask_grey)
+        #cv2.imshow("masked white car", mask_grey)
+        #cv2.waitKey(2)
 
         # process car if needed
         if (np.sum(self.licenses_found) <= 6):
