@@ -62,14 +62,11 @@ class license_plate_detector:
         self.licenses_found = [0, 0, 0, 0, 0, 0, 0, 0]
 
         self.predHistory = [[], [], [], [], [], [], [], []]
-
-
-        self.imNum = 6735
+        self.garbageHistory = [[], [], [], [], [], [], [], []]
 
 
         self.sess = tf.Session()
         self.graph = tf.get_default_graph()
-
         backend.set_session(self.sess)
         self.conv_model_parking_spot = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/parking_spot_model')
         self.conv_model_letters = models.load_model(os.path.dirname(os.path.realpath(__file__)) + '/plate/letters_model')
@@ -260,11 +257,22 @@ def savePlate(self, plate):
             
             self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + final_prediction))
 
-            if (len(self.predHistory[7]) > 2 and len(self.predHistory[6]) > 2):
+            if (len(self.predHistory[7]) > 2 and len(self.predHistory[6]) > 2) or rospy.get_rostime().secs > 180:
+                for i in range(len(self.predHistory)):
+                    if len(self.predHistory[i]) == 0 and len(self.garbageHistory[i]) > 0:
+
+                        most_common_garbage = mostCommon(self.garbageHistory[i], i + 1)
+                        garbage_prediction = str(most_common_garbage[0]) + str(most_common_garbage[1]) + str(most_common_garbage[2]) + str(most_common_garbage[3])
+            
+                        self.license_pub.publish(str('Bestie,Bestie,' + str(i + 1) + ',' + garbage_prediction))
+
                 self.license_pub.publish('Bestie,Bestie,-1,BE57')
         else:
+            self.garbageHistory[prediction_ps].append([prediction_l1, prediction_l2, prediction_n1, prediction_n2])
+
             print("WEE WOO WEE WOO THE GARBAGE POLICE ARE HERE")
             print(license_prediction)
+
 
 def is_garbage(self, plate, plate_num):
     if plate_num == 3 and ((self.licenses_found[1] == 0 and self.licenses_found[2] == 0) or (self.licenses_found[4] == 1 and self.licenses_found[5] == 1)):
