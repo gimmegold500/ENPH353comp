@@ -15,11 +15,10 @@ from tensorflow.keras import layers
 from tensorflow.keras import models
 from tensorflow.keras import optimizers
 
+import tensorflow as tf
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras import backend
 from std_msgs.msg import String
-
-import tensorflow as tf
 
 class license_plate_detector:
 
@@ -50,6 +49,7 @@ class license_plate_detector:
         self.lower_hsv_plate_dark = np.array([lh, ls, lv])
         self.upper_hsv_plate_dark = np.array([uh, us, uv])
 
+        # additional needed HSV filters (based on experimentation)
         self.lower_hsv_w_bright = np.array([0, 0, 191])
         self.upper_hsv_w_bright = np.array([0, 0, 206])
         self.lower_hsv_plate_bright = np.array([103, 0, 112])
@@ -64,7 +64,7 @@ class license_plate_detector:
         self.predHistory = [[], [], [], [], [], [], [], []]
         self.garbageHistory = [[], [], [], [], [], [], [], []]
 
-
+        # Load in CNN models
         self.sess = tf.Session()
         self.graph = tf.get_default_graph()
         backend.set_session(self.sess)
@@ -75,6 +75,7 @@ class license_plate_detector:
     def callback(self, data):
         time.sleep(0.01)
         
+        # Process image and crop out license plate region
         img = self.bridge.imgmsg_to_cv2(data, "bgr8")
         height = img.shape[0]
         width = img.shape[1]
@@ -93,11 +94,9 @@ class license_plate_detector:
 
         # erode and dilate images
         kernel_3 = np.ones((3, 3), np.uint8)
-        kernel_5 = np.ones((9, 9), np.uint8)
-
-        # slice images in half
-        mask_white_dark = cleanImage(mask_white_dark, kernel_5)
-        mask_white_bright = cleanImage(mask_white_bright, kernel_5)
+        kernel_9 = np.ones((9, 9), np.uint8)
+        mask_white_dark = cleanImage(mask_white_dark, kernel_9)
+        mask_white_bright = cleanImage(mask_white_bright, kernel_9)
         mask_plate_dark = cleanImage(mask_plate_dark, kernel_3)
         mask_plate_bright = cleanImage(mask_plate_bright, kernel_3)
         mask_plate_3 = cleanImage(mask_plate_3, kernel_3)
@@ -146,13 +145,21 @@ def car_is_spotted(self, blue_vals, white_vals, grey_vals):
     return np.sum(blue_vals) > 20000 and np.sum(blue_vals) < 40000 and np.sum(white_vals) > 500
 
 def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
+    '''
+    Determine guesses for a license plate number
+
+    blue_vals: mask to extract blue pixels (1 if keep, 0 if don't keep)
+    white_vals: mask to extract white pixels (1 if keep, 0 if don't keep)
+    grey_vals: mask to extract grey pixels (1 if keep, 0 if don't keep)
+    og_img: original image, before masking
+    kernel: kernel for eroding/dilating image
+    '''
     print("CAR!")
 
     shape = np.shape(blue_vals)
 
-    # mask_blue = np.reshape(blue_vals, (shape[0], shape[1], -1))
-    # mask_grey = og_img * mask_blue
-
+    # The back of the cars are blue, white, and grey so we combine these 
+    # to extract a full image of the back of the car
     shape = np.shape(white_vals)
     mask_white = np.reshape(white_vals, (shape[0], shape[1], -1))
     mask_grey = og_img * mask_white
@@ -165,17 +172,20 @@ def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
     plate = cleanImage(plate, kernel)
     plate = plate + mask_grey
 
+    # change to greyscale for more uniformity for neural network
     plate = cv2.cvtColor(plate, cv2.COLOR_HSV2BGR)
     plate = cv2.cvtColor(plate, cv2.COLOR_BGR2GRAY)
 
-    kernel_5 = np.ones((20, 20), np.uint8)
-    plate = cv2.dilate(plate, kernel_5, iterations = 1)
-    plate = cv2.erode(plate, kernel_5, iterations = 1)
-    plate = cleanImage(plate, kernel_5)
+    # get rid of extraneous pixels
+    kernel_20 = np.ones((20, 20), np.uint8)
+    plate = cv2.dilate(plate, kernel_20, iterations = 1)
+    plate = cv2.erode(plate, kernel_20, iterations = 1)
+    plate = cleanImage(plate, kernel_20)
 
+    # See if we can find the contours of the rectangular edges of the car
     im2, contours, hierarchy = cv2.findContours(plate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    if (len(contours) > 0):
+    if (len(contours) > 0): # this means we've found the back of a car
         max_area = -1
 
         for i in range(len(contours)):
@@ -186,41 +196,28 @@ def process_car(self, blue_vals, white_vals, grey_vals, og_img, kernel):
 
         contours = get_list_contours(contours)
 
-        # new_contours = [order_points(contours).astype(int)]
         new_plate = four_point_transform(self, og_img, cnt)
-        
-        # cv2.imshow("warped plate", new_plate)
-        # cv2.waitKey(2)
 
         savePlate(self, new_plate)
 
 def savePlate(self, plate):
-    parkingSpot = plate[66 : 130, 50 :]
-        
-    # cv2.imshow("parking", parkingSpot)
-    # cv2.waitKey(2)
+    '''
+    Produces prediction for license plate image and determines if it is a valid guess
 
+    plate: image of license plate
+    '''
+    parkingSpot = plate[66 : 130, 50 :] # crop out parking spot number
+
+    # crop each individual letter and number out of license plate
     actual_plate = plate[140 : 175, :]
-    letters = actual_plate[ : , 3 : 40] # 5 42
-    numbers = actual_plate[ : , 56 : 93] # 58 95
+    letters = actual_plate[ : , 3 : 40]
+    numbers = actual_plate[ : , 56 : 93]
 
     letterOne = letters[:, :18]
     letterTwo = letters[:, 18 : 36]
 
     numberOne = numbers[:, :18]
     numberTwo = numbers[:, 18 : 36]
-        
-    # cv2.imshow("alphaOne", letterOne)
-    # cv2.waitKey(2)
-        
-    # cv2.imshow("alphaTwo", letterTwo)
-    # cv2.waitKey(2)
-        
-    # cv2.imshow("numberOne", numberOne)
-    # cv2.waitKey(2)
-        
-    # cv2.imshow("numberTwo", numberTwo)
-    # cv2.waitKey(2)
 
     with self.graph.as_default():
         parkingSpot_aug = np.expand_dims(parkingSpot, axis = 0)
@@ -238,15 +235,16 @@ def savePlate(self, plate):
         prediction_n1 = np.argmax(self.conv_model_numbers.predict(numberOne_aug)[0])
         prediction_n2 = np.argmax(self.conv_model_numbers.predict(numberTwo_aug)[0])
 
-        # print(ps_pred)
-        # print(self.conv_model_letters.predict(letterOne_aug)[0])
         print("Parking spot prediction = %d"%(prediction_ps + 1))
         print("License plate prediction = %s %s %d %d"%(prediction_l1, prediction_l2, prediction_n1, prediction_n2))
 
         license_prediction = str(prediction_l1) + str(prediction_l2) + str(prediction_n1) + str(prediction_n2)
 
+        # see if license plate guess is faulty
         if not (is_garbage(self, license_prediction, prediction_ps)):
             self.licenses_found[prediction_ps] = 1
+
+            # Save a history of license plate guesses and choose most common guess per spot
             self.predHistory[prediction_ps].append([prediction_l1, prediction_l2, prediction_n1, prediction_n2])
 
             print(self.predHistory)
@@ -256,7 +254,10 @@ def savePlate(self, plate):
             
             self.license_pub.publish(str('Bestie,Bestie,' + str(prediction_ps + 1) + ',' + final_prediction))
 
+            # stop the timer if we have guesses for every car or if we are at time limit
             if (len(self.predHistory[7]) > 2 and len(self.predHistory[6]) > 2) or rospy.get_rostime().secs > 180:
+                # check if we have license plates that we haven't guessed and if we have, 
+                # see if we accidentally filtered out license plates that may have been correct and guess those
                 for i in range(len(self.predHistory)):
                     if len(self.predHistory[i]) == 0 and len(self.garbageHistory[i]) > 0:
 
@@ -267,13 +268,20 @@ def savePlate(self, plate):
 
                 self.license_pub.publish('Bestie,Bestie,-1,BE57')
         else:
+            # save a history of faulty guesses
             self.garbageHistory[prediction_ps].append([prediction_l1, prediction_l2, prediction_n1, prediction_n2])
 
-            print("WEE WOO WEE WOO THE GARBAGE POLICE ARE HERE")
-            print(license_prediction)
-
-
 def is_garbage(self, plate, plate_num):
+    '''
+    Returns whether or not a guess for a license plate is likely to have occurred on a 
+    non-license plate image
+
+    From experience, we determined that license plates with a lot of 0's, 1's, L's, T's, 7's
+    and 5's or whose parking spot was 3 were likely to be faulty guesses
+
+    plate: license plate guess, first two characters are letters, last two are numbers
+    plate_num: parking spot guess
+    '''
     if plate_num == 3 and ((self.licenses_found[1] == 0 and self.licenses_found[2] == 0) or (self.licenses_found[4] == 1 and self.licenses_found[5] == 1)):
         print("oop")
         return True
@@ -298,6 +306,13 @@ def is_garbage(self, plate, plate_num):
     return points >= 4
 
 def cleanImage(image, kernel):
+    '''
+    Erode and dilate the image
+
+    image: image to dilate/erode
+    kernel: kernel to use for dilating/eroding
+    '''
+
     image = cv2.erode(image, kernel, iterations=1)
     return cv2.dilate(image, kernel, iterations=1)
 
@@ -326,6 +341,9 @@ def order_points(pts):
     return rect
 
 def get_list_contours(contours):
+    '''
+    Flatten a list of contours into a single array
+    '''
     retList = []
 
     for contour_list in contours:
@@ -373,6 +391,10 @@ def four_point_transform(self, image, pts):
 	return warped
   
 def mostCommon(lst, spot):
+    '''
+    Return most common item in a list of lists
+    '''
+
     if spot == 4:
         return max(lst, key = lst.count)
     else:
